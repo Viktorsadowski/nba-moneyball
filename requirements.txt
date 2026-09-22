@@ -1,0 +1,8 @@
+nba_api
+pandas
+numpy
+scipy
+scikit-learn
+matplotlib
+pyarrow
+tqdm
