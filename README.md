@@ -2,7 +2,8 @@
 
 What is each NBA player actually worth, compared to what he gets paid?
 
-Seasons 2010-11 onwards, data from stats.nba.com via nba_api.
+Seasons 2010-11 to 2025-26. Play-by-play from [shufinskiy/nba_data](https://github.com/shufinskiy/nba_data) (stats.nba.com v3 format),
+rosters and minutes from stats.nba.com via nba_api.
 
 ## Plan
 
@@ -13,13 +14,35 @@ Seasons 2010-11 onwards, data from stats.nba.com via nba_api.
 5. Aging curve, to project future wins
 6. Injury discount
 7. Join salaries, compute surplus value (projected value minus salary)
-8. Sub-question: are three-point shooters overpaid?
+8. Sub-questions: are three-point shooters overpaid? does defense win championships? MVP votes vs RAPM
 
 ## Setup
 
 ```
 pip install -r requirements.txt
-python src/check_api.py
+python src/check_api.py     # stats.nba.com answers?
+python src/ingest.py        # raw pbp + rosters -> data/raw
+python src/lineups.py       # stints -> data/processed
+python src/rapm.py          # O/D RAPM per season
+python src/aging.py         # aging curve (needs players.py) -> figures/aging_curve.png
+python src/value.py         # blended, age-adjusted value + backtest of the blend
+python src/mvp.py           # side quest: MVP votes vs RAPM
+
+python src/players.py            # ages, box scores, team schedules (nba_api)
+python src/injuries_pst.py       # injury log 2010-11..2019-20 (prosportstransactions, pre-scraped)
+python src/injury_reports.py     # official NBA injury report PDFs 2021-22.. (download)
+python src/injury_reports.py --parse   # pdfs -> rows
+python src/scrape_salaries.py    # salaries + contracts, basketball-reference.com (~30 min, cached)
+python src/availability.py       # games missed + games lost to injury per player-season
+python src/injury.py             # injury proneness + risk model -> figures/injury_proneness.png
+python src/injury_types.py       # which injury types hurt the future -> figures/injury_types.png
+python src/injury_windows.py     # same, in 82/20-game windows around each injury -> figures/injury_windows.png
+python src/war.py                # calibrated value -> projected WAR for next season
+python src/surplus.py            # $ per WAR, surplus value over the remaining contract
+python src/threes.py             # side quest: are 3-point shooters overpaid? -> figures/threes.png
+python src/playoffs.py           # playoff results (same pbp archive)
+python src/defense.py            # side quest: does defense win championships? -> figures/defense.png
 ```
 
-stats.nba.com blocks most cloud IPs, so run the pulls from your own machine.
+stats.nba.com blocks most cloud IPs, so run the roster pulls from your own machine.
+Set NBA_DATA_DIR to keep the data folder somewhere else.
