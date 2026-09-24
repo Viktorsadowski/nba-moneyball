@@ -45,5 +45,22 @@ python src/playoffs.py           # playoff results (same pbp archive)
 python src/defense.py            # side quest: does defense win championships? -> figures/defense.png
 ```
 
+## Forward test
+
+Before a season starts, freeze the projections and commit them; the commit time is the proof they came first.
+During or after the season, check them against what happened (teams, stints, availability, each vs a simple baseline).
+
+```
+python src/freeze.py                 # -> forecasts/2026-27/ (players.csv, teams.csv, meta.json with sha256)
+git add forecasts
+git commit -m "freeze 2026-27 forecast"
+
+# later in the season (delete the 2026 raw files first for a fresh pull, see forward_test.py)
+python src/ingest.py --seasons 2026
+python src/players.py --seasons 2026
+python src/lineups.py --seasons 2026
+python src/forward_test.py
+```
+
 stats.nba.com blocks most cloud IPs, so run the roster pulls from your own machine.
 Set NBA_DATA_DIR to keep the data folder somewhere else.

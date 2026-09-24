@@ -1,0 +1,19 @@
+{
+  "season": "2026-27",
+  "frozen_utc": "2026-09-24T11:43:51+00:00",
+  "data_through": "2025-26",
+  "git_commit_at_freeze": "94d4b0faa911d16972b00bea437ac507e07299fa",
+  "model": {
+    "rapm": "ridge with box-score prior (box_prior.py)",
+    "value": "50/30/20 x minutes, 250 ghost min, aged",
+    "calibration_a": 1.2152962105296736,
+    "calibration_c": -0.7626647155123992,
+    "replacement": -1.0757679598339032,
+    "points_per_win": 33.58153503587769,
+    "rookie_raw_value": -0.901084977981477
+  },
+  "sha256": {
+    "players.csv": "3bdda295aa5d45a86a40cdab62647d34076182a2a274a691d87ae4b185991a43",
+    "teams.csv": "b47f083fbaaffda8e2fba3e68e1f06181cc685ffe5c34bcbef2b16e30d32d66a"
+  }
+}

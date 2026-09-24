@@ -100,11 +100,12 @@ def fit_season_prior(year: int, prior: pd.DataFrame, plain: pd.DataFrame) -> pd.
 
 # ── 3. forward test ───────────────────────────────────────────────────────────
 
-def forward_error(values: pd.DataFrame, col_o: str, col_d: str) -> dict:
+def forward_error(values: pd.DataFrame, col_o: str, col_d: str, seasons=None) -> dict:
     """season s values -> season s+1 stints. unknown players = 0. league level + home court from s+1 itself,
-    same for every method, so only the player values make the difference."""
+    same for every method, so only the player values make the difference. seasons = the s's (forward_test.py
+    uses it for the frozen 2026-27 forecast)"""
     num, den, base_num, per = 0.0, 0.0, 0.0, {}
-    for s in list(SEASONS)[:-1]:
+    for s in (seasons if seasons is not None else list(SEASONS)[:-1]):
         v = values[values["season"] == s].set_index("player_id")
         st = pd.read_parquet(PROCESSED_DIR / f"stints_{s + 1}.parquet")
         st = st[st["poss"] > 0]
