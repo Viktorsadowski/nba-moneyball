@@ -20,7 +20,7 @@ Tells us whether 50/30/20, the ghost minutes and the age adjustment actually hel
 (small leak: the aging curve is fit on all seasons incl. the ones being predicted, the curve is
 a smooth quadratic over ~8k player-seasons so it barely matters, but worth knowing)
 
-  python src/value.py                               # backtest + value table with 50/30/20, ghost 1000
+  python src/value.py                               # backtest + value table with 50/30/20, ghost 250
   python src/value.py --weights 0.6 0.25 0.15 --ghost 1500
   python src/value.py --no-age                      # without the age adjustment
 """
@@ -116,7 +116,9 @@ def run_grid(rapm: pd.DataFrame) -> pd.DataFrame:
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--weights", type=float, nargs="+", default=[0.5, 0.3, 0.2])
-    ap.add_argument("--ghost", type=float, default=1000)
+    # 1000 was best on plain RAPM. with the box prior (box_prior.py) the values are already pulled towards
+    # something sensible, so less extra pull to 0 is needed: 250 wins the backtest
+    ap.add_argument("--ghost", type=float, default=250)
     ap.add_argument("--no-backtest", action="store_true")
     ap.add_argument("--no-age", action="store_true")
     args = ap.parse_args()

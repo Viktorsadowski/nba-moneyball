@@ -49,7 +49,7 @@ def pipeline() -> None:
     xs = [0, 20.5, 41, 61.5, 82]
     main = [("Play-by-play", "16 seasons, free\nstats.nba.com mirror"),
             ("Stints", "565k stretches with the\nsame 10 on the floor"),
-            ("RAPM", "ridge regression,\noffense + defense"),
+            ("RAPM", "ridge with a box-score\nprior, offense + defense"),
             ("Value", "50/30/20 blend, 1000\nghost min, aging curve"),
             ("Wins (WAR)", "calibrated on team\nresults, vs replacement")]
     for x, (t, s) in zip(xs, main):
@@ -106,7 +106,7 @@ def market() -> None:
         px, py = r.war_next, r.salary_next / 1e6
         for dx, dy in ((0.15, 0.6), (0.15, -1.9), (-1.9, 0.6), (-1.9, -1.9), (0.15, 2.4), (0.15, -3.6)):
             tx, ty = px + dx, py + dy
-            if all(abs(tx - a) > 1.7 or abs(ty - b) > 1.7 for a, b in placed):
+            if all(abs(tx - a) > 2.4 or abs(ty - b) > 1.7 for a, b in placed):
                 break
         placed.append((tx, ty))
         ax.text(tx, ty, r.name, fontsize=6.8, color=INK)

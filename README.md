@@ -9,7 +9,7 @@ rosters and minutes from stats.nba.com via nba_api.
 
 1. Pull play-by-play and split every game into stints (same 10 players on the floor)
 2. RAPM: ridge regression of stint margin on who was playing
-3. Box-prior RAPM: shrink towards a box score estimate instead of zero
+3. Box-prior RAPM: shrink towards a box score estimate instead of zero (box_prior.py)
 4. Convert to wins
 5. Aging curve, to project future wins
 6. Injury discount
@@ -24,11 +24,12 @@ python src/check_api.py     # stats.nba.com answers?
 python src/ingest.py        # raw pbp + rosters -> data/raw
 python src/lineups.py       # stints -> data/processed
 python src/rapm.py          # O/D RAPM per season
-python src/aging.py         # aging curve (needs players.py) -> figures/aging_curve.png
+python src/players.py       # ages, box scores, team schedules (nba_api)
+python src/box_prior.py     # RAPM again, shrunk towards a box-score prior (plain kept in rapm_plain)
+python src/aging.py         # aging curve -> figures/aging_curve.png
 python src/value.py         # blended, age-adjusted value + backtest of the blend
 python src/mvp.py           # side quest: MVP votes vs RAPM
 
-python src/players.py            # ages, box scores, team schedules (nba_api)
 python src/injuries_pst.py       # injury log 2010-11..2019-20 (prosportstransactions, pre-scraped)
 python src/injury_reports.py     # official NBA injury report PDFs 2021-22.. (download)
 python src/injury_reports.py --parse   # pdfs -> rows
