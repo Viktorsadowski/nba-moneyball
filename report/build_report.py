@@ -141,7 +141,7 @@ s.append(box([
     P("Five findings matter for a front office. Players peak at 28 and offense fades faster than defense. Injury "
       "proneness is real and predictable, but players who come back are as good as before, with one exception: after "
       "an ACL tear the first 20 games back are about 0.5 to 0.8 points per 100 possessions worse. The biggest surpluses sit "
-      "on young players on rookie or early extension deals, while only 6 of the 27 players paid $45M or more "
+      "on young players on rookie or early extension deals, while only 7 of the 27 players paid $45M or more "
       "project to earn their salary next season. Three-point volume went from underpaid to overpaid around 2019-20, "
       "but what the market really overpays is scoring, and accurate shooters are the bargain. And defense does not win championships: in the playoffs a "
       "point of defensive edge is worth no more than a point of offensive edge.", abstract),
@@ -224,8 +224,10 @@ s.append(P("Games lost to injury come from the injury log up to 2019-20 and from
            "it beat both the league average and gradient boosting (mean absolute error 12.4, 12.9 and 12.5 games). "
            "Projected minutes are expected games times minutes per game. Players who ended the season still injured "
            "get the rest of their absence on top: from all earlier absences of the same type that had already lasted "
-           "as long, how much of next season they still missed (restricted to established players, and leaving out "
-           "absences over the 2011 lockout and the 2020 break). They also carry the rust of their first 20 games back."))
+           "as long, and of the same severity (tear, fracture or surgery or not), how much of next season they still "
+           "missed. The comparison is in calendar days, so the summer counts as recovery time. It uses established "
+           "players who came back with the same team (a return after changing teams mixes injury and free agency) "
+           "and leaves out absences over the 2011 lockout and the 2020 break. They also carry the rust of their first 20 games back."))
 s.append(P("3.5 The price of a win, and surplus", h2))
 s.append(P("The market price of a win in a season is the total salary paid above the near-minimum level, divided by "
            "the total positive projected WAR it bought. It was $7.7M in 2025-26 and grows with league payroll, 9.1% a "
@@ -248,10 +250,10 @@ s.append(table([
     ["Luka Dončić", "28", "5.8", "14.7", "9.2", "11.5", "2.2"],
     ["Tyrese Maxey", "26", "3.8", "13.9", "7.2", "8.8", "1.6"],
     ["Donovan Mitchell", "30", "4.8", "13.4", "7.2", "8.8", "1.6"],
+    ["Giannis Antetokounmpo", "32", "5.6", "19.9", "7.2", "9.8", "2.6"],
     ["Amen Thompson", "24", "4.1", "11.1", "7.0", "8.2", "1.2"],
     ["Kawhi Leonard", "36", "5.4", "17.2", "6.9", "9.2", "2.2"],
     ["Chet Holmgren", "25", "5.0", "14.5", "6.8", "8.3", "1.6"],
-    ["Derrick White", "32", "4.1", "11.6", "6.6", "7.8", "1.2"],
 ], [4.6 * cm, 1.1 * cm, 2.2 * cm, 2.8 * cm, 1.4 * cm, 2.3 * cm, 2.4 * cm],
     "Table 2. Highest projected WAR for 2026-27. Value is the calibrated, age-adjusted value in points per 100 "
     "possessions above average."))
@@ -297,9 +299,9 @@ s.append(P("Getting back on the floor depends on how long the absence was: 92% o
            "Other types stay within about ±0.25 points. The one exception, +0.25 for 22 Achilles returners, mostly reflects "
            "the aging correction for older players who sat out a full year."))
 s.append(P("In the projections the injury risk costs about 23% of the league's healthy WAR. For the 66 players worth 4+ "
-           "WAR when healthy it is 1.4 WAR a season on average, 23% of their value. The largest shares belong to "
-           "players who ended 2025-26 still out: Kyrie Irving (82%), Jimmy Butler (77%), Damian Lillard (66%) and "
-           "Tyrese Haliburton (57%). 54 players were still listed out at the end of the season and 42 more had "
+           "WAR when healthy it is 1.4 WAR a season on average, 22% of their value. The largest shares belong to "
+           "players who ended 2025-26 still out: Damian Lillard (79%), Jimmy Butler (71%), Kyrie Irving (68%) and "
+           "Tyrese Haliburton (53%). 54 players were still listed out at the end of the season and 42 more had "
            "played fewer than 20 games since coming back."))
 
 s.append(P("4.4 Surplus: who is worth his contract", h2))
@@ -310,7 +312,7 @@ s.append(table([
     ["Most underpaid", "Age", "Years", "Salary $M", "WAR", "Surplus $M", "Most overpaid", "Age", "Years", "Salary $M",
      "WAR", "Surplus $M"],
     ["Wembanyama", "23", "6", "269", "60.9", "+292", "Keyonte George", "23", "6", "162", "4.2", "−114"],
-    ["Gilgeous-Alexander", "28", "5", "314", "66.5", "+271", "Trae Young", "28", "4", "213", "10.3", "−113"],
+    ["Gilgeous-Alexander", "28", "5", "314", "66.5", "+271", "Trae Young", "28", "4", "213", "10.5", "−112"],
     ["Amen Thompson", "24", "6", "220", "45.6", "+263", "Jaylen Brown", "30", "3", "183", "7.9", "−111"],
     ["Kon Knueppel", "21", "3", "36", "19.8", "+147", "Joel Embiid", "33", "3", "188", "8.6", "−110"],
     ["Dyson Daniels", "24", "4", "100", "24.7", "+137", "Paolo Banchero", "24", "5", "241", "14.7", "−96"],
@@ -322,7 +324,7 @@ s.append(table([
     "Table 3. Surplus over the whole remaining contract (salary, WAR and surplus summed over its years), with team "
     "and player options valued as options."))
 s.append(P("The market price of a win for 2026-27 is about $8.4M. At that price only 36% of players under contract "
-           "project to earn their salary next season, and 6 of the 27 players paid $45M or more. The largest "
+           "project to earn their salary next season, and 7 of the 27 players paid $45M or more. The largest "
            "surpluses in the league sit on young players on rookie-scale or early extension deals, and on players "
            "whose value comes from defense and efficiency: Dyson Daniels, Neemias Queta and Payton Pritchard all return "
            "several times their salary. The largest deficits sit on high-usage scorers whose on-court impact is modest "

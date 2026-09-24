@@ -34,12 +34,14 @@ from injury_types import MIN_GAMES, injury_type
 from injury_windows import RUST, all_spells, load_games
 
 FULL = 82
-MIN_CASES = 8           # fewer older cases than this for a type -> all types together
+MIN_CASES = 15          # fewer older cases than this for a type -> same severity, all types
 OUT_TAG = 10            # listed out within the last 10 days of the season = still out
 # a fresh injury that's obviously long even if it happened in the last week ("tear", "surgery"...).
 # injury.SERIOUS is too wide here: it matches any "achilles", also tendinitis and post-repair load management
 FRESH_SERIOUS = re.compile(r"tear|torn|ruptur|fractur|broken|surgery|reconstruct", re.I)
 NOT_FRESH = re.compile(r"management|recovery|tendin|sore", re.I)
+# severity for the recovery-time comparison: a torn meniscus and a bone bruise are both "knee"
+SEVERE = re.compile(r"tear|torn|ruptur|fractur|broken|surgery|reconstruct|repair", re.I)
 
 
 def season_bounds(sched: pd.DataFrame) -> tuple[float, int]:
@@ -84,13 +86,31 @@ if __name__ == "__main__":
         return float(m[ok].sum())
     hist = hist[[min_before(p, st) >= 800 for p, st in zip(hist["pid"], hist["start"])]]
 
-    def remaining_games(typ: str, start: pd.Timestamp) -> tuple[float, float, int]:
-        """expected games of next season missed, chance he's back by opening day, cases used."""
+    # came back for a different team: part of the "absence" is free agency / waivers, not the injury.
+    # those came back 18-46 days after opening day in the median, same-team ones 1-5 days. can't split
+    # the two, so they're left out
+    tm = {p: (g["date"].to_numpy(), g["team_id"].to_numpy()) for p, g in apps.groupby("pid")}
+
+    def moved(pid, start, ret):
+        if pd.isna(ret):
+            return False
+        d, t = tm[pid]
+        before, after = t[d < np.datetime64(start)], t[d >= np.datetime64(ret)]
+        return len(before) > 0 and len(after) > 0 and before[-1] != after[0]
+    hist = hist[[not moved(p, st, r) for p, st, r in zip(hist["pid"], hist["start"], hist["ret"])]]
+    hist["severe"] = hist["note"].str.contains(SEVERE)
+
+    def remaining_games(typ: str, severe: bool, start: pd.Timestamp) -> tuple[float, float, int]:
+        """expected games of next season missed, chance he's back by opening day, cases used.
+        pool: same type and severity, then same severity any type, then everything"""
         e_obs = (end - start).days
         e0 = (t0 - start).days
-        pool = hist[(hist["type"] == typ) & (hist["days"] > e_obs)]["days"]
+        long = hist[hist["days"] > e_obs]
+        pool = long[(long["type"] == typ) & (long["severe"] == severe)]["days"]
         if len(pool) < MIN_CASES:
-            pool = hist[hist["days"] > e_obs]["days"]
+            pool = long[long["severe"] == severe]["days"]
+        if len(pool) < MIN_CASES:
+            pool = long["days"]
         if pool.empty:
             return float(FULL), 0.0, 0
         missed_days = np.clip(pool.to_numpy() - e0 - 7, 0, length)
@@ -107,7 +127,7 @@ if __name__ == "__main__":
     cur = sp[sp["ret"].isna() & (sp["last"] >= end - pd.Timedelta(days=OUT_TAG))
              & ((sp["missed"] >= MIN_GAMES) | fresh_serious)]
     for r in cur.itertuples(index=False):
-        g, p_back, n = remaining_games(r.type, r.start)
+        g, p_back, n = remaining_games(r.type, bool(SEVERE.search(str(r.note))), r.start)
         # back during next season -> his first 20 games back carry the rust
         p_return = 1.0 if g < FULL - 0.5 else 0.0
         rows.append(dict(player_id=int(r.pid), status="out", type=r.type, out_since=r.start, note=r.note,

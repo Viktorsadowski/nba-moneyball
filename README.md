@@ -2,8 +2,34 @@
 
 What is each NBA player actually worth, compared to what he gets paid?
 
-Seasons 2010-11 to 2025-26. Play-by-play from [shufinskiy/nba_data](https://github.com/shufinskiy/nba_data) (stats.nba.com v3 format),
-rosters and minutes from stats.nba.com via nba_api.
+**[Read the report (PDF, 10 pages)](report/nba_moneyball_report.pdf)**
+
+Every player is priced in wins and compared with his contract. Player impact comes from RAPM with a box-score prior,
+projected forward with an aging curve and an injury-risk model, turned into wins above replacement (WAR) by
+calibrating on team results, and priced at what the market paid per win: about $7.7M in 2025-26. Last season's
+player values predict team wins with a correlation of 0.79. Free data only, seasons 2010-11 to 2025-26.
+
+![Projected WAR vs salary, 2026-27](report/figures/market.png)
+
+Main findings:
+
+- Players peak at 28, and offense fades faster than defense.
+- Injury proneness is real and predictable (top fifth of injury history misses 21 games next season, bottom fifth 7),
+  but players who come back are as good as before. The exception is the ACL: the first 20 games back are about
+  0.5 to 0.8 points per 100 worse.
+- The biggest surpluses sit on young players on rookie or early extension deals. Only 7 of the 27 players paid $45M
+  or more project to earn their salary next season.
+- Three-point volume went from underpaid to overpaid around 2019-20, but what the market really overpays is scoring.
+  Accurate shooters are the bargain.
+- Defense does not win championships: in the playoffs a point of defensive edge is worth no more than a point of
+  offensive edge.
+
+The 2026-27 projections are frozen in [forecasts/2026-27](forecasts/2026-27) before the season, to be tested
+against what happens (see Forward test below).
+
+Play-by-play from [shufinskiy/nba_data](https://github.com/shufinskiy/nba_data) (stats.nba.com v3 format),
+rosters, minutes and box scores from stats.nba.com via nba_api, injuries from ProSportsTransactions and the
+official NBA injury reports, salaries and contracts from basketball-reference.com.
 
 ## Plan
 
