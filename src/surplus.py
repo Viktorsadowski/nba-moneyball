@@ -10,7 +10,10 @@ Step 10: what is every player worth, against what he's paid.
               floored at 0, a team can always bench a guy who's below replacement
   surplus     sum over his remaining contract years of  WAR * $/WAR (grown with the cap) - salary
 
-Contracts come from bbref's current contracts page, options are treated as guaranteed years.
+Contracts come from bbref's current contracts page. Option years (options.py): a team option year is worth
+E[max(worth - salary, 0)] to the team, a player option year E[min(worth - salary, 0)], with the spread of the
+projection from our own history. Non-guaranteed years count as team options. surplus_noopt = the old way,
+every year as if guaranteed.
 
 Output: data/processed/surplus.parquet
 
@@ -23,6 +26,7 @@ import numpy as np
 import pandas as pd
 
 from config import PROCESSED_DIR, RAW_DIR, SEASONS, season_label
+from options import contract_options, player_option_value, projection_sd, team_option_value
 from scrape_salaries import unmojibake
 from war import MIN_SALARY_Q, compact, last_name, salaries_with_ids, unsuffix
 
@@ -96,14 +100,43 @@ if __name__ == "__main__":
     # value in raw units is already aged to next season, move it (year - 1) more years
     raw = p["val"].to_numpy() + age_fn(p["age_next"].to_numpy() + con["year"].to_numpy() - 1) \
         - age_fn(p["age_next"].to_numpy())
-    val_cal = prm["a"] * raw + prm["c"] + prm["a"] * p["val_adj"].fillna(0).to_numpy()
-    con["war"] = np.clip((val_cal - prm["repl"]) * p["proj_min"].to_numpy() * k, 0, None)
+    # next season carries the current injury (fewer games, rust in val_adj), later seasons don't
+    first = con["year"].to_numpy() == 1
+    adj = np.where(first, p["val_adj"].fillna(0).to_numpy(), 0)
+    later = p["proj_min_later"].to_numpy() if "proj_min_later" in p.columns else p["proj_min"].to_numpy()
+    mins = np.where(first, p["proj_min"].to_numpy(), later)
+    val_cal = prm["a"] * raw + prm["c"] + prm["a"] * adj
+    con["war_mu"] = (val_cal - prm["repl"]) * mins * k
+    con["war"] = con["war_mu"].clip(lower=0)
     con["dpw"] = dpw[last] * (1 + g) ** con["year"]
     con["worth"] = con["war"] * con["dpw"]
-    con["surplus"] = con["worth"] - con["salary"]
+    con["surplus_noopt"] = con["worth"] - con["salary"]
+
+    # ── options (options.py): a team option year is worth E[max(W - salary, 0)], a player option year
+    # E[min(W - salary, 0)], W uncertain. next season's options count as decided (picked up = guaranteed)
+    opt = contract_options()
+    # same player twice in a season (stretched money from an old team): keep the bigger row, like above
+    opt = opt.sort_values("salary").drop_duplicates(["player", "team", "season"], keep="last")
+    con = con.merge(opt[["player", "team", "season", "option"]], on=["player", "team", "season"], how="left")
+    con.loc[con["year"] == 1, "option"] = None
+    sd_tab = projection_sd()
+    h = con["year"].clip(2, max(sd_tab)).to_numpy()
+    alpha = np.array([sd_tab[x][0] for x in h])
+    beta = np.array([sd_tab[x][1] for x in h])
+    sd = alpha + beta * con["war"].to_numpy()
+    mu, sal, d = con["war_mu"].to_numpy(), con["salary"].to_numpy(), con["dpw"].to_numpy()
+    con["surplus"] = con["surplus_noopt"]
+    tm, pl = (con["option"] == "team").to_numpy(), (con["option"] == "player").to_numpy()
+    con.loc[tm, "surplus"] = team_option_value(mu[tm], sd[tm], sal[tm], d[tm])
+    con.loc[pl, "surplus"] = player_option_value(mu[pl], sd[pl], sal[pl], d[pl])
+    con["option_value"] = con["surplus"] - con["surplus_noopt"]
+    print(f"option years valued: {tm.sum()} team (incl. non-guaranteed), {pl.sum()} player")
 
     s = con.groupby("player_id").agg(years=("year", "size"), salary=("salary", "sum"), war=("war", "sum"),
-                                     worth=("worth", "sum"), surplus=("surplus", "sum"))
+                                     worth=("worth", "sum"), surplus=("surplus", "sum"),
+                                     surplus_noopt=("surplus_noopt", "sum"), option_value=("option_value", "sum"),
+                                     team_opt=("option", lambda x: (x == "team").sum()),
+                                     player_opt=("option", lambda x: (x == "player").sum()))
     nxt = con[con["year"] == 1].set_index("player_id")
     s["salary_next"] = nxt["salary"]
     s["war_next"] = nxt["war"]
@@ -120,3 +153,10 @@ if __name__ == "__main__":
     print(f"\n{len(s)} players with a contract past {season_label(last)}. money in $M, whole remaining contract")
     show(s.sort_values("surplus", ascending=False).head(15), "MOST UNDERPAID (surplus value)")
     show(s.sort_values("surplus").head(15), "MOST OVERPAID")
+
+    t = s.assign(option_value=s["option_value"] / 1e6, surplus=s["surplus"] / 1e6, surplus_noopt=s["surplus_noopt"] / 1e6)
+    cols = ["name", "age_next", "years", "team_opt", "player_opt", "surplus_noopt", "option_value", "surplus"]
+    print("\nOPTIONS: biggest gains for the team (team options on uncertain players)")
+    print(t.sort_values("option_value", ascending=False)[cols].head(8).round(1).to_string(index=False))
+    print("\nOPTIONS: biggest losses for the team (player options, he leaves when he's underpaid)")
+    print(t.sort_values("option_value")[cols].head(8).round(1).to_string(index=False))

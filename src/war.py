@@ -238,10 +238,16 @@ if __name__ == "__main__":
         m = projected_minutes(mins, s)
         d = v.merge(m, on="player_id", how="inner")
         if risk is not None:
-            r = risk[risk["season"] == s][["player_id", "exp_games", "exp_inj_games", "exp_other_games", "val_adj"]]
+            cols = ["player_id", "exp_games", "exp_inj_games", "exp_other_games", "val_adj"]
+            # current_injuries.py adds the games for the seasons after next (no current injury in them)
+            cols += ["exp_games_later"] if "exp_games_later" in risk.columns else []
+            r = risk[risk["season"] == s][cols]
             d = d.merge(r, on="player_id", how="left")
             has = d["exp_games"].notna()
             d.loc[has, "proj_min"] = d.loc[has, "exp_games"] * d.loc[has, "proj_mpg"]
+            later = d["exp_games_later"] if "exp_games_later" in d.columns else d["exp_games"]
+            d["proj_min_later"] = d["proj_min"]
+            d.loc[has & later.notna(), "proj_min_later"] = later * d["proj_mpg"]
             d.loc[has, "healthy_min"] = (FULL_SEASON - d.loc[has, "exp_other_games"]) * d.loc[has, "proj_mpg"]
             # injury discount on the value itself, 0 unless injury.py found a real effect
             d["val_cal"] = d["val_cal"] + a * d["val_adj"].fillna(0)

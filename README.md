@@ -38,8 +38,9 @@ python src/availability.py       # games missed + games lost to injury per playe
 python src/injury.py             # injury proneness + risk model -> figures/injury_proneness.png
 python src/injury_types.py       # which injury types hurt the future -> figures/injury_types.png
 python src/injury_windows.py     # same, in 82/20-game windows around each injury -> figures/injury_windows.png
+python src/current_injuries.py   # who ended the season still hurt: remaining games + rust -> updates injury_risk
 python src/war.py                # calibrated value -> projected WAR for next season
-python src/surplus.py            # $ per WAR, surplus value over the remaining contract
+python src/surplus.py            # $ per WAR, surplus over the remaining contract, options valued (options.py)
 python src/threes.py             # side quest: are 3-point shooters overpaid? -> figures/threes.png
 python src/playoffs.py           # playoff results (same pbp archive)
 python src/defense.py            # side quest: does defense win championships? -> figures/defense.png
@@ -55,7 +56,8 @@ python src/freeze.py                 # -> forecasts/2026-27/ (players.csv, teams
 git add forecasts
 git commit -m "freeze 2026-27 forecast"
 
-# later in the season (delete the 2026 raw files first for a fresh pull, see forward_test.py)
+# once the season has started. for a fresh pull, first delete the 2026 raw files:
+# Remove-Item data\raw\pbp_2026.parquet, data\raw\roster_2026.parquet, data\raw\players_2026.parquet, data\raw\team_games_2026.parquet
 python src/ingest.py --seasons 2026
 python src/players.py --seasons 2026
 python src/lineups.py --seasons 2026

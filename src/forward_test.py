@@ -17,7 +17,7 @@ First checks the sha256 of the frozen files against meta.json, so an edited fore
 Data for the new season (no change to config.py needed). The raw files get skipped if they exist, so for
 a mid-season update delete them first:
 
-  del data\\raw\\pbp_2026.parquet data\\raw\\roster_2026.parquet data\\raw\\players_2026.parquet data\\raw\\team_games_2026.parquet
+  Remove-Item data\\raw\\pbp_2026.parquet, data\\raw\\roster_2026.parquet, data\\raw\\players_2026.parquet, data\\raw\\team_games_2026.parquet
   python src/ingest.py --seasons 2026
   python src/players.py --seasons 2026
   python src/lineups.py --seasons 2026
@@ -75,6 +75,13 @@ if __name__ == "__main__":
     year = int(folder.name[:4])
     print(f"forward test {folder.name}")
     check_hashes(folder)
+    # nothing to test before the season has games (players.py even writes empty files before tip-off)
+    need = [PROCESSED_DIR / f"stints_{year}.parquet", RAW_DIR / f"players_{year}.parquet",
+            RAW_DIR / f"team_games_{year}.parquet"]
+    missing = [f.name for f in need if not f.exists() or pd.read_parquet(f).empty]
+    if missing:
+        raise SystemExit(f"no {folder.name} games yet ({', '.join(missing)} missing or empty). run this once the "
+                         f"season has started, after ingest/players/lineups --seasons {year}")
 
     players = pd.read_csv(folder / "players.csv")
     teams = pd.read_csv(folder / "teams.csv")

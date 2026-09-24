@@ -162,8 +162,11 @@ def all_spells(rosters, scheds, apps, sched) -> pd.DataFrame:
     rep["ret"] = [ret_of(p, s) for p, s in zip(rep["pid"], rep["last"])]
     rep["src"] = "report"
 
-    sp = pd.concat([pst[["pid", "start", "ret", "missed", "note", "src"]],
-                    rep[["pid", "start", "ret", "missed", "note", "src"]]], ignore_index=True)
+    # last = last date he was listed out (reports only; the PST log has no daily listing, so = start there).
+    # current_injuries.py uses it to see who was still out when the season ended
+    pst["last"] = pst["start"]
+    sp = pd.concat([pst[["pid", "start", "last", "ret", "missed", "note", "src"]],
+                    rep[["pid", "start", "last", "ret", "missed", "note", "src"]]], ignore_index=True)
     # same return = same absence (PST relists guys: DTD -> out -> out for season). keep the first start and
     # the biggest count. note: the most serious one, so "strained calf (DTD)" in May + "torn Achilles" in
     # June is an Achilles
@@ -171,8 +174,8 @@ def all_spells(rosters, scheds, apps, sched) -> pd.DataFrame:
     sp["rank"] = [note_rank(n) for n in sp["note"]]
     note = sp.sort_values("rank").drop_duplicates(["pid", "ret_key"]).set_index(["pid", "ret_key"])["note"]
     sp = sp.sort_values(["pid", "start"])
-    sp = sp.groupby(["pid", "ret_key"]).agg(start=("start", "first"), ret=("ret", "first"), missed=("missed", "max"),
-                                            src=("src", "first"))
+    sp = sp.groupby(["pid", "ret_key"]).agg(start=("start", "first"), last=("last", "max"), ret=("ret", "first"),
+                                            missed=("missed", "max"), src=("src", "first"))
     sp["note"] = note
     return sp.reset_index().drop(columns="ret_key")
 

@@ -141,7 +141,7 @@ s.append(box([
     P("Five findings matter for a front office. Players peak at 28 and offense fades faster than defense. Injury "
       "proneness is real and predictable, but players who come back are as good as before, with one exception: after "
       "an ACL tear the first 20 games back are about 0.5 to 0.8 points per 100 possessions worse. The biggest surpluses sit "
-      "on young players on rookie or early extension deals, while only 8 of the 27 players paid $45M or more "
+      "on young players on rookie or early extension deals, while only 6 of the 27 players paid $45M or more "
       "project to earn their salary next season. Three-point volume went from underpaid to overpaid around 2019-20, "
       "but what the market really overpays is scoring, and accurate shooters are the bargain. And defense does not win championships: in the playoffs a "
       "point of defensive edge is worth no more than a point of offensive edge.", abstract),
@@ -222,13 +222,20 @@ s.append(P("Games lost to injury come from the injury log up to 2019-20 and from
            "season and converted back with the official-report average (13.7 games per 82). A linear model on the "
            "last three seasons of injuries, age and minutes predicts next season's games missed. In a rolling backtest "
            "it beat both the league average and gradient boosting (mean absolute error 12.4, 12.9 and 12.5 games). "
-           "Projected minutes are expected games times minutes per game."))
+           "Projected minutes are expected games times minutes per game. Players who ended the season still injured "
+           "get the rest of their absence on top: from all earlier absences of the same type that had already lasted "
+           "as long, how much of next season they still missed (restricted to established players, and leaving out "
+           "absences over the 2011 lockout and the 2020 break). They also carry the rust of their first 20 games back."))
 s.append(P("3.5 The price of a win, and surplus", h2))
 s.append(P("The market price of a win in a season is the total salary paid above the near-minimum level, divided by "
            "the total positive projected WAR it bought. It was $7.7M in 2025-26 and grows with league payroll, 9.1% a "
            "year over the last ten seasons. Later contract years move the player further along the aging curve with "
            "the same availability, and WAR is floored at 0 since a team can always bench a player. Surplus over a "
-           "contract is the sum over its years of WAR × price per win − salary."))
+           "contract is the sum over its years of WAR × price per win − salary. Option years are valued as options: the "
+           "team keeps a team-option year only if the player is worth his salary, so it is worth E[max(worth − salary, "
+           "0)]; a player leaves on a player option when he is underpaid, so the team's side is E[min(worth − salary, "
+           "0)]. The spread of the projection 2 to 5 years out is measured on our own history, and non-guaranteed "
+           "years count as team options."))
 
 # 4
 s.append(P("4. Results", h1))
@@ -239,12 +246,12 @@ s.append(table([
     ["Nikola Jokić", "32", "8.0", "13.1", "11.7", "14.2", "2.6"],
     ["Victor Wembanyama", "23", "6.8", "14.4", "9.4", "11.5", "2.1"],
     ["Luka Dončić", "28", "5.8", "14.7", "9.2", "11.5", "2.2"],
-    ["Giannis Antetokounmpo", "32", "5.7", "17.7", "7.5", "9.9", "2.4"],
     ["Tyrese Maxey", "26", "3.8", "13.9", "7.2", "8.8", "1.6"],
     ["Donovan Mitchell", "30", "4.8", "13.4", "7.2", "8.8", "1.6"],
     ["Amen Thompson", "24", "4.1", "11.1", "7.0", "8.2", "1.2"],
     ["Kawhi Leonard", "36", "5.4", "17.2", "6.9", "9.2", "2.2"],
     ["Chet Holmgren", "25", "5.0", "14.5", "6.8", "8.3", "1.6"],
+    ["Derrick White", "32", "4.1", "11.6", "6.6", "7.8", "1.2"],
 ], [4.6 * cm, 1.1 * cm, 2.2 * cm, 2.8 * cm, 1.4 * cm, 2.3 * cm, 2.4 * cm],
     "Table 2. Highest projected WAR for 2026-27. Value is the calibrated, age-adjusted value in points per 100 "
     "possessions above average."))
@@ -289,9 +296,11 @@ s.append(P("Getting back on the floor depends on how long the absence was: 92% o
            "worse (interval −1.33 to −0.29, 0.45 after shrinkage), and over the first 82 games most of it is gone. "
            "Other types stay within about ±0.25 points. The one exception, +0.25 for 22 Achilles returners, mostly reflects "
            "the aging correction for older players who sat out a full year."))
-s.append(P("In the projections the injury risk costs about 21% of the league's healthy WAR. For the 66 players worth 4+ "
-           "WAR when healthy it is 1.2 WAR a season on average, 19% of their value, and above 30% for Joel Embiid, Ty "
-           "Jerome, Ja Morant and Kyrie Irving."))
+s.append(P("In the projections the injury risk costs about 23% of the league's healthy WAR. For the 66 players worth 4+ "
+           "WAR when healthy it is 1.4 WAR a season on average, 23% of their value. The largest shares belong to "
+           "players who ended 2025-26 still out: Kyrie Irving (82%), Jimmy Butler (77%), Damian Lillard (66%) and "
+           "Tyrese Haliburton (57%). 54 players were still listed out at the end of the season and 42 more had "
+           "played fewer than 20 games since coming back."))
 
 s.append(P("4.4 Surplus: who is worth his contract", h2))
 s.append(figure(RFIG / "market.png", "Figure 5. Projected WAR against salary for 2026-27, every player with a contract. "
@@ -300,24 +309,30 @@ s.append(figure(RFIG / "market.png", "Figure 5. Projected WAR against salary for
 s.append(table([
     ["Most underpaid", "Age", "Years", "Salary $M", "WAR", "Surplus $M", "Most overpaid", "Age", "Years", "Salary $M",
      "WAR", "Surplus $M"],
-    ["Wembanyama", "23", "6", "269", "60.9", "+375", "Keyonte George", "23", "6", "162", "4.2", "−114"],
-    ["Gilgeous-Alexander", "28", "5", "314", "66.5", "+352", "Jaylen Brown", "30", "3", "183", "7.9", "−111"],
-    ["Amen Thompson", "24", "6", "220", "45.6", "+263", "Joel Embiid", "33", "3", "188", "8.6", "−111"],
-    ["Kon Knueppel", "21", "3", "36", "19.8", "+147", "Trae Young", "28", "4", "213", "10.7", "−110"],
-    ["Dyson Daniels", "24", "4", "100", "24.7", "+137", "Paolo Banchero", "24", "5", "241", "14.7", "−92"],
+    ["Wembanyama", "23", "6", "269", "60.9", "+292", "Keyonte George", "23", "6", "162", "4.2", "−114"],
+    ["Gilgeous-Alexander", "28", "5", "314", "66.5", "+271", "Trae Young", "28", "4", "213", "10.3", "−113"],
+    ["Amen Thompson", "24", "6", "220", "45.6", "+263", "Jaylen Brown", "30", "3", "183", "7.9", "−111"],
+    ["Kon Knueppel", "21", "3", "36", "19.8", "+147", "Joel Embiid", "33", "3", "188", "8.6", "−110"],
+    ["Dyson Daniels", "24", "4", "100", "24.7", "+137", "Paolo Banchero", "24", "5", "241", "14.7", "−96"],
     ["Chet Holmgren", "25", "5", "241", "35.4", "+116", "Bradley Beal", "34", "4", "91", "0.0", "−91"],
-    ["Neemias Queta", "27", "5", "59", "16.8", "+110", "Ayo Dosunmu", "27", "5", "112", "2.6", "−86"],
+    ["Neemias Queta", "27", "5", "59", "16.8", "+110", "Ayo Dosunmu", "27", "5", "112", "2.6", "−82"],
     ["VJ Edgecombe", "21", "3", "39", "15.4", "+103", "Dillon Brooks", "31", "4", "93", "1.9", "−77"],
 ], [2.75 * cm, 0.8 * cm, 0.95 * cm, 1.35 * cm, 1.0 * cm, 1.5 * cm, 2.75 * cm, 0.8 * cm, 0.95 * cm, 1.35 * cm,
     1.0 * cm, 1.5 * cm],
-    "Table 3. Surplus over the whole remaining contract (salary, WAR and surplus summed over its years). Options are "
-    "counted as guaranteed."))
+    "Table 3. Surplus over the whole remaining contract (salary, WAR and surplus summed over its years), with team "
+    "and player options valued as options."))
 s.append(P("The market price of a win for 2026-27 is about $8.4M. At that price only 36% of players under contract "
-           "project to earn their salary next season, and 8 of the 27 players paid $45M or more. The largest "
+           "project to earn their salary next season, and 6 of the 27 players paid $45M or more. The largest "
            "surpluses in the league sit on young players on rookie-scale or early extension deals, and on players "
            "whose value comes from defense and efficiency: Dyson Daniels, Neemias Queta and Payton Pritchard all return "
            "several times their salary. The largest deficits sit on high-usage scorers whose on-court impact is modest "
            "by RAPM, and on stars past 32 on the last years of big deals."))
+s.append(P("Options move the picture for a handful of contracts. A player option costs the team exactly in the good "
+           "outcomes: Wembanyama's and Gilgeous-Alexander's final-year player options take about $80M each off their "
+           "surplus, Jokić's $40M, because a player who is worth more than his salary leaves. Team options work the "
+           "other way and help most on young, uncertain players: the option years on rookie deals like Ace Bailey's "
+           "or Jeremiah Fears' are worth about $18-23M to their teams, since a bad outcome can simply be declined. "
+           "Across the league, options and non-guaranteed years add up to a net $224M for the teams."))
 
 s.append(P("4.5 Are three-point shooters overpaid?", h2))
 s.append(P("For every player-season from 2011-12 on, salary is expressed in wins at that season's price and regressed on "
@@ -400,8 +415,8 @@ s += bullets([
     "data. Tracking data would be the next step.",
     "The win scale depends on the calibration and the replacement level. A replacement team wins about 29 games "
     "here, and every WAR and dollar number moves with that choice.",
-    "Contracts: player and team options are treated as guaranteed, and cap mechanics (aprons, cap holds, trade "
-    "matching) are not modeled. The price of a win is the market average, while a contender may rationally pay more "
+    "Contracts: options are valued on expected value, one year at a time, and ignore extensions signed instead of "
+    "an opt-out. Cap mechanics (aprons, cap holds, trade matching) are not modeled. The price of a win is the market average, while a contender may rationally pay more "
     "at the margin.",
     "Injury data: two sources with different completeness, normalized within season. No data for 2020-21. Injuries in "
     "the playoffs show up at the next season's first report. Some injury groups are small (16 to 28 ACL cases per "
@@ -434,6 +449,12 @@ s.append(table([
     ["Injury windows", "10+ games out; pre = last 82 games (after the previous return), post = first 20 / 82 games "
      "back; post windows fitted as change from pre (offset); controls at pivots in healthy stretches; separate fits for "
      "injuries and controls", "1,295 injuries, 2,544 controls; empirical-Bayes shrinkage, bootstrap intervals"],
+    ["Current injuries", "still out at season end (10+ games or a tear/fracture/surgery note): remaining games from "
+     "earlier absences of the same type that lasted as long (established players only); rust for the first 20 games",
+     "54 still out, 42 back fewer than 20 games"],
+    ["Options", "team option E[max(W − S, 0)], player option E[min(W − S, 0)], W normal with sd = a + b·WAR by "
+     "horizon, fitted on past projections; next season's options count as decided", "sd 0.65 + 0.15·WAR (2 years out) "
+     "to 1.11 + 0.38·WAR (5 years)"],
     ["Price of a win", "Σ(salary − 20th percentile) / Σ positive projected WAR, per season; 9.1% yearly growth",
      "$7.7M in 2025-26"],
     ["Threes", "salary in WAR units ~ projected WAR + 3PA/36 + 3P% (shrunk to 35% with 100 attempts) + rookie flag "
@@ -448,7 +469,7 @@ s.append(P("Everything runs from the repository with Python 3 (pandas, numpy, sc
 for line in ["check_api, ingest, lineups, rapm, players, box_prior, aging, value, mvp",
              "injuries_pst, injury_reports (download, then --parse), scrape_salaries",
              "availability, injury, injury_types, injury_windows",
-             "war, surplus, threes, playoffs, defense",
+             "current_injuries, war, surplus (uses options), threes, playoffs, defense",
              "report/make_figures.py, report/build_report.py"]:
     s.append(P(line, mono))
 s.append(Spacer(1, 6))
