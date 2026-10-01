@@ -15,7 +15,12 @@ Writes forecasts/{season}/ (in the repo, not in data/, so git tracks it):
 Commit + push right after, the commit time is the proof it came before the season.
 Won't overwrite an existing freeze (--force if you really mean it).
 
+--version v2: a second freeze next to the first (forecasts/2026-27-v2/), so the forward test can tell whether
+later changes helped. teams.csv then comes from the season simulator (season_sim.py: rookie model, minutes best
+players first, lineup shapes, playoff rotations) with playoff / Finals / title odds, players.csv as before.
+
   python src/freeze.py
+  python src/freeze.py --version v2      # after season_sim.py
 """
 
 import argparse
@@ -49,11 +54,12 @@ def git_commit() -> str:
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--force", action="store_true")
+    ap.add_argument("--version", default=None, help="second freeze next to the first, e.g. v2")
     args = ap.parse_args()
 
     as_of = max(SEASONS)
     target = as_of + 1
-    out = ROOT / "forecasts" / season_label(target)
+    out = ROOT / "forecasts" / (season_label(target) + (f"-{args.version}" if args.version else ""))
     if out.exists() and not args.force:
         raise SystemExit(f"{out} already exists, that's the frozen one. --force to overwrite (and say why)")
     out.mkdir(parents=True, exist_ok=True)
@@ -104,8 +110,14 @@ if __name__ == "__main__":
     teams["net_per100"] = teams["diff"] / (TEAM_MIN / 5 * pace) * 100
     teams["proj_wins"] = GAMES / 2 + teams["diff"] / ppw
     teams = teams.sort_values("proj_wins", ascending=False)
-    teams[["team", "proj_wins", "net_per100", "players", "roster_minutes_share"]].to_csv(
-        out / "teams.csv", index=False, float_format="%.3f")
+    team_cols = ["team", "proj_wins", "net_per100", "players", "roster_minutes_share"]
+    if args.version:
+        # v2: the simulator's teams (its own rosters, rookies by draft slot, lineup shapes), odds included
+        odds = pd.read_parquet(PROCESSED_DIR / "season_odds.parquet")
+        teams = odds.rename(columns={"wins": "proj_wins", "net": "net_per100"})
+        teams = teams.sort_values("proj_wins", ascending=False)
+        team_cols = ["team", "proj_wins", "net_per100", "playoffs", "conf_finals", "finals", "title"]
+    teams[team_cols].to_csv(out / "teams.csv", index=False, float_format="%.3f")
 
     meta = {
         "season": season_label(target),
@@ -115,6 +127,10 @@ if __name__ == "__main__":
         "model": {"rapm": "ridge with box-score prior (box_prior.py)", "value": "50/30/20 x minutes, 250 ghost min, aged",
                   "calibration_a": a, "calibration_c": c, "replacement": repl, "points_per_win": ppw,
                   "rookie_raw_value": rookie},
+        "version": args.version or "v1",
+        "since_v1": ("young-player bump + rookies by draft slot (rookies.py), rosters + dead money (rosters.py), "
+                     "current injuries without ended careers, teams from season_sim.py with lineup shapes "
+                     "(positions.py) and playoff rotations (playoff_rotation.py)") if args.version else None,
         "sha256": {"players.csv": sha256(out / "players.csv"), "teams.csv": sha256(out / "teams.csv")},
     }
     (out / "meta.json").write_text(json.dumps(meta, indent=2))
@@ -122,6 +138,6 @@ if __name__ == "__main__":
     print(f"frozen {season_label(target)} -> {out}")
     print(f"  {len(players)} players, {players['team'].notna().sum()} with a {season_label(target)} contract")
     print("\nprojected standings:")
-    print(teams[["team", "proj_wins", "net_per100", "players", "roster_minutes_share"]].round(1).to_string(index=False))
+    print(teams[team_cols].round(2).to_string(index=False))
     print("\nnow commit + push, the commit time is the timestamp:")
     print(f'  git add forecasts && git commit -m "freeze {season_label(target)} forecast"')

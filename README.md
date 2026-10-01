@@ -2,7 +2,9 @@
 
 What is each NBA player actually worth, compared to what he gets paid?
 
-**[Read the report (PDF, 10 pages)](report/nba_moneyball_report.pdf)**
+**[Read the report (PDF, 13 pages)](report/nba_moneyball_report.pdf)**
+
+**[Case study: How do we get Bron his last ring? (PDF, 9 pages)](report/phi_case_last_ring.pdf)**, the trades that give the 2026-27 76ers the best title odds
 
 Every player is priced in wins and compared with his contract. Player impact comes from RAPM with a box-score prior,
 projected forward with an aging curve and an injury-risk model, turned into wins above replacement (WAR) by
@@ -53,6 +55,7 @@ python src/rapm.py          # O/D RAPM per season
 python src/players.py       # ages, box scores, team schedules (nba_api)
 python src/box_prior.py     # RAPM again, shrunk towards a box-score prior (plain kept in rapm_plain)
 python src/aging.py         # aging curve -> figures/aging_curve.png
+python src/draft.py         # draft history 2010-, nba_api (your own machine), value.py uses it
 python src/value.py         # blended, age-adjusted value + backtest of the blend
 python src/mvp.py           # side quest: MVP votes vs RAPM
 
@@ -60,6 +63,7 @@ python src/injuries_pst.py       # injury log 2010-11..2019-20 (prosportstransac
 python src/injury_reports.py     # official NBA injury report PDFs 2021-22.. (download)
 python src/injury_reports.py --parse   # pdfs -> rows
 python src/scrape_salaries.py    # salaries + contracts, basketball-reference.com (~30 min, cached)
+python src/rosters.py            # who plays where now (nba.com): the rest of a bought-out contract = dead money
 python src/availability.py       # games missed + games lost to injury per player-season
 python src/injury.py             # injury proneness + risk model -> figures/injury_proneness.png
 python src/injury_types.py       # which injury types hurt the future -> figures/injury_types.png
@@ -70,6 +74,18 @@ python src/surplus.py            # $ per WAR, surplus over the remaining contrac
 python src/threes.py             # side quest: are 3-point shooters overpaid? -> figures/threes.png
 python src/playoffs.py           # playoff results (same pbp archive)
 python src/defense.py            # side quest: does defense win championships? -> figures/defense.png
+python src/rookies.py            # rookie model: value + minutes by pick, young-player bump, pick value -> figures/rookies.png
+python src/season_sim.py         # 10,000 seasons: playoff / Finals / title odds + the win value curve
+python src/market_value.py       # what the market pays: new contracts ~ box score (Tobit), market surplus, pick value
+python src/scrape_transactions.py  # every trade since 2011-12, bbref (your own machine)
+python src/trade_value.py        # what real trades say a pick costs, in the market's money
+python src/playoff_stints.py     # playoff play-by-play -> stints (same archive)
+python src/playoff_rotation.py   # playoff minute shares by rank: shorter rotations -> season_sim uses them
+python src/positions.py          # box-score roles + what lineups without bigs / guards cost -> season_sim
+python src/season_sim.py         # rerun with playoff rotations and lineup shapes
+python src/arbitrage.py          # who predicts team wins better: payroll, the market's price or our model
+python src/trade_search.py       # PHI case: best legal trades the other side accepts at market prices (~30 min)
+python report/make_case_figures.py && python report/build_case.py   # the PHI case PDF
 ```
 
 ## Forward test
@@ -79,6 +95,7 @@ During or after the season, check them against what happened (teams, stints, ava
 
 ```
 python src/freeze.py                 # -> forecasts/2026-27/ (players.csv, teams.csv, meta.json with sha256)
+python src/freeze.py --version v2    # -> forecasts/2026-27-v2/, after season_sim.py, teams with playoff / title odds
 git add forecasts
 git commit -m "freeze 2026-27 forecast"
 

@@ -48,9 +48,9 @@ def pipeline() -> None:
     top = 25
     xs = [0, 20.5, 41, 61.5, 82]
     main = [("Play-by-play", "16 seasons, free\nstats.nba.com mirror"),
-            ("Stints", "565k stretches with the\nsame 10 on the floor"),
+            ("Stints", "578k stretches with the\nsame 10 on the floor"),
             ("RAPM", "ridge with a box-score\nprior, offense + defense"),
-            ("Value", "50/30/20 blend, 1000\nghost min, aging curve"),
+            ("Value", "50/30/20 blend, 250\nghost min, aging curve"),
             ("Wins (WAR)", "calibrated on team\nresults, vs replacement")]
     for x, (t, s) in zip(xs, main):
         box(x, top, w, h, t, s, LIGHT_BLUE, BLUE)

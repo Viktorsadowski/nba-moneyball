@@ -2,7 +2,7 @@
 """
 Builds report/nba_moneyball_report.pdf from the text below + the figures.
 
-Numbers in the text are from the September 2026 run (seasons 2010-11 to 2025-26). If the pipeline gets
+Numbers in the text are from the October 2026 run (seasons 2010-11 to 2025-26). If the pipeline gets
 rerun on new data, the text has to be updated by hand, the figures come along automatically.
 
   python report/make_figures.py
@@ -115,7 +115,7 @@ def on_page(c, doc):
     c.setFillColor(MUTED)
     if doc.page > 1:
         c.drawString(MARGIN, H - 1.25 * cm, "What is an NBA player worth?")
-        c.drawRightString(W - MARGIN, H - 1.25 * cm, "Viktor Sadowski, September 2026")
+        c.drawRightString(W - MARGIN, H - 1.25 * cm, "Viktor Sadowski, October 2026")
     c.drawCentredString(W / 2, 1.2 * cm, str(doc.page))
     c.restoreState()
 
@@ -126,7 +126,7 @@ s = []
 s += [Spacer(1, 1.2 * cm),
       P("What is an NBA player worth?", title),
       P("Pricing wins, aging and injury risk with free data, 2010-11 to 2025-26", subtitle),
-      P("Viktor Sadowski · September 2026 · code: nba-moneyball", byline),
+      P("Viktor Sadowski · October 2026 · code: nba-moneyball", byline),
       Spacer(1, 0.6 * cm)]
 
 s.append(box([
@@ -137,14 +137,19 @@ s.append(box([
       "forward with an aging "
       "curve and an injury-risk model, turned into wins above replacement (WAR) by calibrating on team results, and "
       "priced at what the market paid per win: about $7.7M in 2025-26. The model predicts team wins from the "
-      "previous season's player values with a correlation of 0.79.", abstract),
-    P("Five findings matter for a front office. Players peak at 28 and offense fades faster than defense. Injury "
+      "previous season's player values with a correlation of 0.79. A second model prices players the way the "
+      "market does, from 2,635 veteran contracts, and 415 trades show what the league pays for a draft pick. A "
+      "season simulator turns rosters into playoff and title odds, and its 2026-27 forecast was frozen before "
+      "opening night.", abstract),
+    P("Six findings matter for a front office. Players peak at 28 and offense fades faster than defense. Injury "
       "proneness is real and predictable, but players who come back are as good as before, with one exception: after "
       "an ACL tear the first 20 games back are about 0.5 to 0.8 points per 100 possessions worse. The biggest surpluses sit "
       "on young players on rookie or early extension deals, while only 7 of the 27 players paid $45M or more "
       "project to earn their salary next season. Three-point volume went from underpaid to overpaid around 2019-20, "
-      "but what the market really overpays is scoring, and accurate shooters are the bargain. And defense does not win championships: in the playoffs a "
-      "point of defensive edge is worth no more than a point of offensive edge.", abstract),
+      "but what the market really overpays is scoring, and accurate shooters are the bargain. Defense does not win championships: in the playoffs a "
+      "point of defensive edge is worth no more than a point of offensive edge. And when our value and the "
+      "market's price disagree, ours predicts team wins better (error 6.4 wins per 82 vs 7.2), and the market's "
+      "price adds nothing once ours is known. That gap is where a team can trade.", abstract),
 ]))
 
 # 1
@@ -158,10 +163,13 @@ s.append(P("The framework answers four questions:"))
 s += bullets(["How many wins will a player add next season, and over the rest of his contract?",
               "How much of that is at risk because of age and injuries?",
               "What does a win cost on the market?",
-              "Where does the market misprice players?"])
+              "Where does the market misprice players?",
+              "What will other teams accept for him, and who is right when that differs from what he adds?"])
 s.append(P("The goal is a blueprint: a pipeline a front office can rerun every summer, with clear inputs, a validation "
            "for each step and known limits. Three side questions run on the same data: do MVP voters see the same "
-           "players as the model, are three-point shooters overpaid, and does defense win championships."))
+           "players as the model, are three-point shooters overpaid, and does defense win championships. A separate "
+           "case study puts it all to work on one team: what trades give the 2026-27 Philadelphia 76ers the best "
+           "shot at a title (\"How do we get Bron his last ring?\", in the same repository)."))
 
 # 2
 s.append(P("2. Data", h1))
@@ -174,6 +182,8 @@ s.append(table([
      "2010-11 to 2019-20"],
     ["Official NBA injury reports (PDF)", "status and reason per player, every game day", "2021-22 to 2025-26"],
     ["Basketball-Reference", "salary per player-season, current contracts, MVP votes", "2010-11 to 2031-32"],
+    ["stats.nba.com via nba_api", "draft history, 2026-27 rosters", "2010 to 2026"],
+    ["Basketball-Reference", "transactions: every trade with players, picks and cash", "2013-14 to 2026-27"],
 ], [5.6 * cm, 7.4 * cm, 3.8 * cm], "Table 1. Data sources. 2020-21 has no injury data and is skipped wherever an "
    "injury count is needed."))
 s.append(P("Lineups are rebuilt from the substitutions. Every game becomes a sequence of stints, stretches where the "
@@ -207,10 +217,17 @@ s.append(P("A single season of RAPM is noisy, so next season's value is a blend 
            "against the delta method and smoothed with a quadratic. In a backtest the age adjustment lowers the error "
            "of the next-season projection from 1.667 to 1.613 points per 100 (RMSE, minutes weighted). Without the prior the "
            "backtest preferred 1,000 ghost minutes; with it, much less extra pull is needed."))
+s.append(P("Rookies have no RAPM, and young players improve faster than the aging curve says. So a rookie starts "
+           "at what his draft slot has been worth (value and minutes as a function of log pick, from every pick "
+           "since 2010), and players in seasons 2 to 4 get a bump by pick group, learned from how far earlier "
+           "projections fell short for the same group: about +1 point per 100 in year 2 for top-5 picks, 0.1 to 0.5 "
+           "elsewhere. Both are tested out of sample (one draft left out, the bump from earlier seasons only). In "
+           "the backtest they bring the error from 1.546 to "
+           "1.527 for all players and from 1.642 to 1.585 for players in their first four seasons."))
 s.append(P("3.3 From points to wins", h2))
 s.append(P("The blended value is shrunk, so it is put back on a real scale by calibrating against the next season's "
-           "team point differentials: calibrated value = 1.21 × value − 0.77. Replacement level is what teams actually "
-           "got from near-minimum contracts (the bottom 20% of salaries): −1.07 points per 100. One win equals 33.6 "
+           "team point differentials: calibrated value = 1.19 × value − 0.78. Replacement level is what teams actually "
+           "got from near-minimum contracts (the bottom 20% of salaries): −1.05 points per 100. One win equals 33.6 "
            "points of season point differential. Then"))
 s[-1] = KeepTogether([s[-1], P("WAR = (value − replacement) × possessions / 100 / 33.6", mono)])
 s.append(P("As a check, each team's wins are predicted from the previous season's player values and this season's "
@@ -237,26 +254,48 @@ s.append(P("The market price of a win in a season is the total salary paid above
            "team keeps a team-option year only if the player is worth his salary, so it is worth E[max(worth − salary, "
            "0)]; a player leaves on a player option when he is underpaid, so the team's side is E[min(worth − salary, "
            "0)]. The spread of the projection 2 to 5 years out is measured on our own history, and non-guaranteed "
-           "years count as team options."))
+           "years count as team options. Rosters come from nba.com: a contract on a team whose roster doesn't have "
+           "the player is dead money, it counts for the payroll but not on the court."))
+s.append(P("3.6 The market's price", h2))
+s.append(P("Surplus says what a player adds. A trade also needs what other teams will accept, so a second model "
+           "prices players the way the market does. It takes every new veteran contract since 2013-14 (2,635, found "
+           "where a salary jumps outside the raises one deal allows) and fits the first-year salary as a share of "
+           "the cap on what the player had done before signing: points, rebounds, assists, minutes and games, last "
+           "season and the three before, plus shooting, age and our RAPM value. Minimum and max deals only say "
+           "\"at most\" and \"at least\", so the fit is a Tobit. With the season left out it misses by 3.1% of the "
+           "cap (about $5M a year, r 0.71). A player's market value is that price for every season left on his "
+           "contract minus his salary."))
+s.append(P("Draft picks are priced two ways. What a pick turns into: the market value of what drafted players did "
+           "over their four rookie-scale seasons minus their salaries, by slot. And what trades pay for one: with "
+           "players at market value, the gap between the two sides of each of 415 trades since 2013-14 is what the "
+           "picks and cash had to make up, solved by least squares with a bootstrap over trades."))
+s.append(P("3.7 From rosters to seasons", h2))
+s.append(P("A team's strength is the sum of its players' values per 100 possessions, minutes given to the best "
+           "players first and the rest filled at replacement level. Two corrections sit on top. Lineup shape: every "
+           "player gets a role from his box score (rebounds, blocks, assists and threes per 36, clustered into "
+           "guards, wings and bigs), and 467,485 stints show what a lineup with too few bigs or guards costs beyond "
+           "the players' RAPM. Playoff rotations: playoff minutes go more to the top of the roster, and the playoff "
+           "rounds use those shares. The simulator then plays 10,000 seasons with the real schedule format, the "
+           "play-in and best-of-seven series."))
 
 # 4
 s.append(P("4. Results", h1))
 s.append(P("4.1 Who is valuable", h2))
 s.append(table([
     ["Player", "Age", "Value per 100", "Expected injury games", "WAR", "WAR if healthy", "Lost to injury risk"],
-    ["Shai Gilgeous-Alexander", "28", "9.2", "12.1", "13.5", "16.1", "2.6"],
-    ["Nikola Jokić", "32", "8.0", "13.1", "11.7", "14.2", "2.6"],
-    ["Victor Wembanyama", "23", "6.8", "14.4", "9.4", "11.5", "2.1"],
-    ["Luka Dončić", "28", "5.8", "14.7", "9.2", "11.5", "2.2"],
-    ["Tyrese Maxey", "26", "3.8", "13.9", "7.2", "8.8", "1.6"],
-    ["Donovan Mitchell", "30", "4.8", "13.4", "7.2", "8.8", "1.6"],
-    ["Giannis Antetokounmpo", "32", "5.6", "19.9", "7.2", "9.8", "2.6"],
-    ["Amen Thompson", "24", "4.1", "11.1", "7.0", "8.2", "1.2"],
-    ["Kawhi Leonard", "36", "5.4", "17.2", "6.9", "9.2", "2.2"],
-    ["Chet Holmgren", "25", "5.0", "14.5", "6.8", "8.3", "1.6"],
+    ["Shai Gilgeous-Alexander", "28", "9.1", "12.1", "13.3", "15.8", "2.5"],
+    ["Nikola Jokić", "32", "7.8", "13.1", "11.4", "14.0", "2.5"],
+    ["Victor Wembanyama", "23", "7.1", "14.4", "9.8", "11.9", "2.2"],
+    ["Luka Dončić", "28", "5.7", "14.7", "9.1", "11.3", "2.2"],
+    ["Amen Thompson", "24", "4.5", "11.1", "7.5", "8.7", "1.2"],
+    ["Kon Knueppel", "21", "4.3", "9.0", "7.5", "8.4", "0.9"],
+    ["Giannis Antetokounmpo", "32", "5.5", "19.4", "7.1", "9.6", "2.5"],
+    ["Donovan Mitchell", "30", "4.7", "13.4", "7.0", "8.6", "1.6"],
+    ["Tyrese Maxey", "26", "3.7", "13.9", "7.0", "8.5", "1.5"],
+    ["Kawhi Leonard", "36", "5.3", "17.2", "6.8", "9.0", "2.2"],
 ], [4.6 * cm, 1.1 * cm, 2.2 * cm, 2.8 * cm, 1.4 * cm, 2.3 * cm, 2.4 * cm],
     "Table 2. Highest projected WAR for 2026-27. Value is the calibrated, age-adjusted value in points per 100 "
-    "possessions above average."))
+    "possessions above average, including the young-player bump."))
 s.append(P("The model and the MVP voters mostly agree on who the best players are. The median MVP winner since 2010-11 "
            "ranks second in that season's RAPM, 75% of winners were in the RAPM top five and half were first. They "
            "disagree on why: vote share correlates with offensive RAPM (Spearman 0.48) and barely with defensive RAPM "
@@ -265,7 +304,7 @@ s.append(P("The model and the MVP voters mostly agree on who the best players ar
 
 s.append(P("4.2 Aging", h2))
 s.append(figure(FIG / "aging_curve.png", "Figure 2. Aging curve, points per 100 possessions compared with the peak. "
-                "Fixed effects (lines, smoothed) and the delta method (dashed) agree up to about 33."))
+                "Fixed effects (lines, smoothed) and the delta method (dashed) agree up to about 33.", width=TEXT_W * 0.8))
 s.append(P("Players peak at 28 and stay within 0.1 points of the peak from 27 to 30. A player is 0.8 points per 100 below "
            "his peak at 23, 0.7 at 33, and 1.4 at 35. The decline after 30 is slower than the rise before 25. Offense drives both the rise and the "
            "fall; defense moves about a third as much. In money: a four-year deal signed at 30 covers exactly the "
@@ -298,10 +337,10 @@ s.append(P("Getting back on the floor depends on how long the absence was: 92% o
            "worse (interval −1.33 to −0.29, 0.45 after shrinkage), and over the first 82 games most of it is gone. "
            "Other types stay within about ±0.25 points. The one exception, +0.25 for 22 Achilles returners, mostly reflects "
            "the aging correction for older players who sat out a full year."))
-s.append(P("In the projections the injury risk costs about 23% of the league's healthy WAR. For the 66 players worth 4+ "
-           "WAR when healthy it is 1.4 WAR a season on average, 22% of their value. The largest shares belong to "
-           "players who ended 2025-26 still out: Damian Lillard (79%), Jimmy Butler (71%), Kyrie Irving (68%) and "
-           "Tyrese Haliburton (53%). 54 players were still listed out at the end of the season and 42 more had "
+s.append(P("In the projections the injury risk costs about 22% of the league's healthy WAR. For the 65 players worth 4+ "
+           "WAR when healthy it is 1.3 WAR a season on average, 21% of their value. The largest shares belong to "
+           "players coming off long absences: Jimmy Butler (71%), Kyrie Irving (44%), Damian "
+           "Lillard (43%), Fred VanVleet (41%) and Tyrese Haliburton (36%). 54 players were still listed out at the end of the season and 42 more had "
            "played fewer than 20 games since coming back."))
 
 s.append(P("4.4 Surplus: who is worth his contract", h2))
@@ -311,30 +350,30 @@ s.append(figure(RFIG / "market.png", "Figure 5. Projected WAR against salary for
 s.append(table([
     ["Most underpaid", "Age", "Years", "Salary $M", "WAR", "Surplus $M", "Most overpaid", "Age", "Years", "Salary $M",
      "WAR", "Surplus $M"],
-    ["Wembanyama", "23", "6", "269", "60.9", "+292", "Keyonte George", "23", "6", "162", "4.2", "−114"],
-    ["Gilgeous-Alexander", "28", "5", "314", "66.5", "+271", "Trae Young", "28", "4", "213", "10.5", "−112"],
-    ["Amen Thompson", "24", "6", "220", "45.6", "+263", "Jaylen Brown", "30", "3", "183", "7.9", "−111"],
-    ["Kon Knueppel", "21", "3", "36", "19.8", "+147", "Joel Embiid", "33", "3", "188", "8.6", "−110"],
-    ["Dyson Daniels", "24", "4", "100", "24.7", "+137", "Paolo Banchero", "24", "5", "241", "14.7", "−96"],
-    ["Chet Holmgren", "25", "5", "241", "35.4", "+116", "Bradley Beal", "34", "4", "91", "0.0", "−91"],
-    ["Neemias Queta", "27", "5", "59", "16.8", "+110", "Ayo Dosunmu", "27", "5", "112", "2.6", "−82"],
-    ["VJ Edgecombe", "21", "3", "39", "15.4", "+103", "Dillon Brooks", "31", "4", "93", "1.9", "−77"],
+    ["Wembanyama", "23", "6", "269", "63.0", "+313", "Trae Young", "28", "4", "213", "10.3", "−114"],
+    ["Amen Thompson", "24", "6", "220", "48.4", "+295", "Jaylen Brown", "30", "3", "183", "7.6", "−113"],
+    ["Gilgeous-Alexander", "28", "5", "314", "65.3", "+263", "Keyonte George", "23", "6", "162", "4.3", "−113"],
+    ["Kon Knueppel", "21", "3", "36", "24.3", "+189", "Joel Embiid", "33", "3", "188", "8.3", "−112"],
+    ["VJ Edgecombe", "21", "3", "39", "20.4", "+149", "Paolo Banchero", "24", "5", "241", "14.2", "−99"],
+    ["Dyson Daniels", "24", "4", "100", "24.1", "+133", "Ayo Dosunmu", "27", "5", "112", "2.4", "−85"],
+    ["Chet Holmgren", "25", "5", "241", "34.7", "+110", "Dillon Brooks", "31", "4", "93", "1.7", "−78"],
+    ["Neemias Queta", "27", "5", "59", "16.4", "+106", "Devin Booker", "30", "4", "251", "18.4", "−77"],
 ], [2.75 * cm, 0.8 * cm, 0.95 * cm, 1.35 * cm, 1.0 * cm, 1.5 * cm, 2.75 * cm, 0.8 * cm, 0.95 * cm, 1.35 * cm,
     1.0 * cm, 1.5 * cm],
     "Table 3. Surplus over the whole remaining contract (salary, WAR and surplus summed over its years), with team "
     "and player options valued as options."))
-s.append(P("The market price of a win for 2026-27 is about $8.4M. At that price only 36% of players under contract "
+s.append(P("The market price of a win for 2026-27 is about $8.4M. At that price only 37% of players under contract "
            "project to earn their salary next season, and 7 of the 27 players paid $45M or more. The largest "
            "surpluses in the league sit on young players on rookie-scale or early extension deals, and on players "
-           "whose value comes from defense and efficiency: Dyson Daniels, Neemias Queta and Payton Pritchard all return "
-           "several times their salary. The largest deficits sit on high-usage scorers whose on-court impact is modest "
+           "whose value comes from defense and efficiency: Dyson Daniels and Neemias Queta return two to three times "
+           "their salary. The largest deficits sit on high-usage scorers whose on-court impact is modest "
            "by RAPM, and on stars past 32 on the last years of big deals."))
 s.append(P("Options move the picture for a handful of contracts. A player option costs the team exactly in the good "
-           "outcomes: Wembanyama's and Gilgeous-Alexander's final-year player options take about $80M each off their "
-           "surplus, Jokić's $40M, because a player who is worth more than his salary leaves. Team options work the "
+           "outcomes: Wembanyama's and Gilgeous-Alexander's final-year player options take $88M and $80M off their "
+           "surplus, Jokić's $39M, because a player who is worth more than his salary leaves. Team options work the "
            "other way and help most on young, uncertain players: the option years on rookie deals like Ace Bailey's "
-           "or Jeremiah Fears' are worth about $18-23M to their teams, since a bad outcome can simply be declined. "
-           "Across the league, options and non-guaranteed years add up to a net $224M for the teams."))
+           "or Jeremiah Fears' are worth about $16-19M to their teams, since a bad outcome can simply be declined. "
+           "Across the league, options and non-guaranteed years add up to a net $160M for the teams."))
 
 s.append(P("4.5 Are three-point shooters overpaid?", h2))
 s.append(P("For every player-season from 2011-12 on, salary is expressed in wins at that season's price and regressed on "
@@ -373,17 +412,66 @@ s.append(P("Each team's regular-season offense and defense are measured against 
            "it does not matter much which end it comes from. If anything a defensive rating predicts a little less, "
            "probably because it holds more luck, such as the opponents' shooting."))
 
+s.append(P("4.7 Our price vs the market's: who is right?", h2))
+s.append(P("The market model says what teams pay for a box score. Consistency is paid for: three seasons of stats "
+           "predict a contract better than the last one, and games played over three years is one of the strongest "
+           "terms. Volume comes first, impact a little after. So the two prices disagree, most on high-usage scorers "
+           "on big deals. Which one is right can be tested with the one judge neither side controls: wins. For every "
+           "team-season since 2013-14 the players were valued three ways before the season (payroll, the market "
+           "model and our projected WAR), each scaled by how much they then played."))
+s.append(figure(FIG / "arbitrage.png", "Figure 8. Error predicting team wins per 82 games from what the roster was "
+                "worth before the season, 390 team-seasons, each season predicted from the others.",
+                width=TEXT_W * 0.68))
+s.append(P("Payroll misses by 8.0 wins, the market model by 7.2 and our model by 6.4. In one regression with all "
+           "three, ours carries it: +8.9 wins per standard deviation, the market model −0.7 (95% interval −2.7 to "
+           "+1.5) and payroll +1.7 (probably what teams know about health that the stats don't). Once our value is "
+           "known, the market's price says nothing more about wins. It is still the right guide to what another team "
+           "will accept: trades balance far better in the market's money than in ours (average miss 5.5% of the cap "
+           "vs 9.7%)."))
+s.append(P("The same trades price draft picks. A future first buys about $5.3M of market value (95% interval −$0.4M "
+           "to $11.3M) and a second $1.4M ($0.2M to $2.9M), while the average first turned into $17.9M of value over "
+           "its rookie deal and the average second $3.3M. The slot curve has the shape of the published research: "
+           "#10 is worth about half of #1 and #30 a fifth. A traded pick buys less than it turns into, so picks close "
+           "gaps in a trade but rarely buy a star."))
+
+s.append(P("4.8 The 2026-27 season", h2))
+s.append(P("Lineup shape matters mostly at the guard spots. Compared with two bigs and two guards on the floor, no "
+           "big costs 0.8 points per 100 (interval −1.4 to −0.1), one big is as good as two, no guard costs 2.1 and "
+           "one guard 0.7, all on top of the players' RAPM. For 2026-27 that moves teams from −0.8 (Houston, short on "
+           "guards) to +0.6 (Milwaukee). Playoff rotations are real but small: the top five players go from 57% of "
+           "the minutes to 61%, which adds +0.2 to +0.8 points per 100 in the playoffs, most for star-led Denver "
+           "and Oklahoma City."))
+s.append(table([
+    ["Team", "Wins", "Net per 100", "Playoffs", "Finals", "Title"],
+    ["Oklahoma City", "57.9", "+8.1", "99%", "44%", "32%"],
+    ["San Antonio", "53.6", "+5.7", "97%", "21%", "14%"],
+    ["Boston", "51.7", "+4.7", "94%", "24%", "11%"],
+    ["Houston", "51.5", "+4.9", "95%", "15%", "9%"],
+    ["New York", "48.4", "+3.2", "87%", "15%", "5%"],
+    ["Denver", "48.1", "+3.4", "88%", "9%", "5%"],
+], [4.0 * cm, 2.0 * cm, 2.6 * cm, 2.4 * cm, 2.4 * cm, 2.4 * cm],
+    "Table 5. Projected 2026-27, 10,000 simulated seasons. The full forecast for all 30 teams and every player was "
+    "frozen on October 1, before opening night (forecasts/2026-27-v2 in the repository), to be scored after the "
+    "season."))
+
 # 5
 s.append(P("5. Using it in a front office", h1))
 s.append(P("5.1 Contract ceilings", h2))
 s.append(P("Before a negotiation starts, the ceiling for a deal is the sum over its years of projected WAR times the "
            "price of a win, with the aging curve and the player's own injury projection built in. Anything below the "
-           "ceiling is surplus for the team. Derrick White, for example, projects at 6.6 WAR next season, about $55M of "
+           "ceiling is surplus for the team. Derrick White, for example, projects at 6.4 WAR next season, about $54M of "
            "wins on a $30M salary; at 32 the ceiling for each extra year falls, which the curve prices directly."))
 s.append(P("5.2 Trades and extensions", h2))
 s.append(P("Surplus is the asset a team actually trades. Rookie-scale stars are the most valuable contracts in the league "
            "by a wide margin, and that surplus shrinks the moment an extension starts. Two players with the same "
            "reputation can differ by hundreds of millions in surplus, depending on age and years left."))
+s.append(P("A trade needs both prices: ours for what a player adds, the market's for what the other team will "
+           "accept. The useful trades sell players the market still likes and we don't, and buy the reverse. The "
+           "case study does this for Philadelphia. Joel Embiid and Jaylen Brown are priced close to their salaries "
+           "by the market and about $110M underwater over their contracts by our model. Three trades that are even "
+           "or better for every partner at the market's price, legal under the 2026-27 CBA (salary matching by "
+           "apron, trade bonuses, roster spots), take the 76ers from 46 to 58 projected wins and from 3.5% to 27% "
+           "title odds while staying under the first apron and giving up only second-round picks."))
 s.append(P("5.3 Pricing injury risk", h2))
 s.append(P("Injury history predicts missed games and does not predict a worse player. The protection should therefore "
            "target availability: games-played incentives, partial guarantees and shorter terms for the high-risk "
@@ -400,6 +488,7 @@ s += bullets(["Scoring volume is priced well above what it adds in wins. Paying 
               "shooters are paid about $0.8M a season less per standard deviation.",
               "Defense-first and efficient role players deliver the largest surpluses outside rookie deals, and MVP "
               "voters ignore defense entirely, which suggests the wider market does too.",
+              "Picks are cheap to buy: a traded first costs about a third of what the average first turns into.",
               "For the playoffs, build net rating the cheapest way. There is no premium for getting there with "
               "defense."])
 s.append(P("5.6 Running it", h2))
@@ -407,7 +496,8 @@ s.append(P("The pipeline reruns every summer from free data, one script per step
            "check: cross-validation for RAPM, a backtest for the projection and the injury model, and the team-wins "
            "check for WAR. A team can plug in better inputs without touching the rest: tracking data or a box-score "
            "prior for RAPM, its own medical data for the injury model, and its cap sheet for the contract "
-           "mechanics."))
+           "mechanics. Each season's forecast gets frozen before opening night so it can be scored honestly "
+           "afterwards."))
 
 # 6
 s.append(P("6. Limitations", h1))
@@ -418,8 +508,13 @@ s += bullets([
     "The win scale depends on the calibration and the replacement level. A replacement team wins about 29 games "
     "here, and every WAR and dollar number moves with that choice.",
     "Contracts: options are valued on expected value, one year at a time, and ignore extensions signed instead of "
-    "an opt-out. Cap mechanics (aprons, cap holds, trade matching) are not modeled. The price of a win is the market average, while a contender may rationally pay more "
-    "at the margin.",
+    "an opt-out. The trade search models the 2026-27 trade rules (salary matching by apron, trade bonuses, roster "
+    "spots), but not cap holds, exceptions for free agents or planning over several seasons. The price of a win is "
+    "the market average, while a contender may rationally pay more at the margin.",
+    "The market model only sees new veteran contracts and the box score. It doesn't know about health records, "
+    "agents or timing, and pick prices from trades are noisy (the first-round interval includes 0).",
+    "Lineup shape uses three box-score roles. It catches lineups without bigs or ball handlers, not finer fit "
+    "like spacing or two players who need the ball.",
     "Injury data: two sources with different completeness, normalized within season. No data for 2020-21. Injuries in "
     "the playoffs show up at the next season's first report. Some injury groups are small (16 to 28 ACL cases per "
     "measure).",
@@ -429,7 +524,6 @@ s += bullets([
     "the point, and partly the noise in the first bullet."])
 
 # appendix
-s.append(PageBreak())
 s.append(P("Appendix A. Technical details", h1))
 s.append(table([
     ["Step", "Choice", "Validation"],
@@ -442,9 +536,11 @@ s.append(table([
      "in 15 of 15 seasons, +44% variance explained"],
     ["Value", "50/30/20 × minutes, 250 ghost minutes at 0, each season aged to next season's age", "backtest RMSE "
      "1.667 to 1.613 with aging"],
+    ["Rookies and young players", "draft slot -> rookie value and minutes (log pick), bump for seasons 2-4 by pick "
+     "group learned from earlier seasons", "backtest RMSE 1.546 -> 1.527, seasons 1-4 1.642 -> 1.585"],
     ["Aging", "fixed effects (player + age dummies, ridge α=1), delta method as check, weighted quadratic",
      "peak 28; methods agree to about 33"],
-    ["WAR", "calibration 1.21 × value − 0.77 on next-season team differentials; replacement −1.07 from bottom-20% "
+    ["WAR", "calibration 1.19 × value − 0.78 on next-season team differentials; replacement −1.05 from bottom-20% "
      "salaries; 33.6 points per win", "team wins r = 0.79, MAE 6.1"],
     ["Injury risk", "normalized injury share, 3-year blend, age, minutes; linear, shrunk to the mean", "rolling "
      "backtest MAE 12.36 vs 12.88 (league average) vs 12.46 (boosting)"],
@@ -463,21 +559,36 @@ s.append(table([
      "+ age + age²", "player bootstrap, by era and season"],
     ["Defense", "game margin ~ O edge + D edge, regular-season ratings (leave-one-game-out in the regular season)",
      "series bootstrap for playoffs; logit on wins as check"],
+    ["Market value", "Tobit on first-year salary share of new veteran contracts (censored at 3% and 24.5% of the "
+     "cap), box stats last season + 3 seasons, age, RAPM value", "season left out: MAE 3.1% of cap, r 0.71"],
+    ["Pick prices", "value in − out = p1 (1sts out − in) + p2 (2nds out − in) + cash + swaps, least squares, "
+     "bootstrap over trades", "415 trades, 2013-14 to 2026-27"],
+    ["Who is right", "team wins ~ payroll / market price / our WAR of the roster before the season, each scaled "
+     "by minutes played vs expected", "leave one season out, 390 team-seasons"],
+    ["Season simulator", "net per 100 from rosters (best players first, filler at replacement) + lineup shape; "
+     "playoff minute shares in the playoff rounds; real schedule format, play-in, best-of-seven",
+     "team wins MAE 6.1; playoff game RMSE 13.913 -> 13.901"],
+    ["Positions", "roles from box stats per 36 (rebounds, blocks, assists, 3PA), k-means into guard / wing / big; "
+     "stint margin minus the ten players' RAPM ~ bigs and guards on each side", "467,485 stints; bootstrap over "
+     "games"],
 ], [2.5 * cm, 9.2 * cm, 5.1 * cm]))
 s.append(P("Appendix B. Reproducing it", h1))
 s.append(P("Everything runs from the repository with Python 3 (pandas, numpy, scipy, scikit-learn, matplotlib, "
            "pdfplumber). stats.nba.com blocks most cloud servers, so the roster and box-score pulls run from a normal "
            "machine. In order:"))
-for line in ["check_api, ingest, lineups, rapm, players, box_prior, aging, value, mvp",
-             "injuries_pst, injury_reports (download, then --parse), scrape_salaries",
+for line in ["check_api, ingest, lineups, rapm, players, box_prior, aging, draft, value, mvp",
+             "injuries_pst, injury_reports (download, then --parse), scrape_salaries, rosters",
              "availability, injury, injury_types, injury_windows",
-             "current_injuries, war, surplus (uses options), threes, playoffs, defense",
+             "current_injuries, war, rookies, surplus (uses options), threes, playoffs, defense",
+             "market_value, scrape_transactions, trade_value, playoff_stints, playoff_rotation, positions",
+             "season_sim, arbitrage, freeze --version v2",
              "report/make_figures.py, report/build_report.py"]:
     s.append(P(line, mono))
 s.append(Spacer(1, 6))
 s.append(P("Data: play-by-play from github.com/shufinskiy/nba_data; stats.nba.com through nba_api; injury log from "
            "github.com/gboogy/nba-injury-data-scraper (ProSportsTransactions); injury reports from the NBA's official "
-           "PDFs; salaries, contracts and MVP votes from basketball-reference.com.", caption))
+           "PDFs; salaries, contracts, transactions and MVP votes from basketball-reference.com; draft history and rosters "
+           "from nba.com.", caption))
 
 
 # headings stick to whatever comes right after them (keepWithNext alone didn't do it with KeepTogether blocks)
