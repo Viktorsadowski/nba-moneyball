@@ -140,7 +140,8 @@ s.append(box([
       "previous season's player values with a correlation of 0.79. A second model prices players the way the "
       "market does, from 2,635 veteran contracts, and 415 trades show what the league pays for a draft pick. A "
       "season simulator turns rosters into playoff and title odds, and its 2026-27 forecast was frozen before "
-      "opening night.", abstract),
+      "opening night. Run the way it would have been each October since 2013, the forecast misses by 7.1 wins a "
+      "team, against 6.7 for the Vegas win totals and 8.8 for last season's record.", abstract),
     P("Six findings matter for a front office. Players peak at 28 and offense fades faster than defense. Injury "
       "proneness is real and predictable, but players who come back are as good as before, with one exception: after "
       "an ACL tear the first 20 games back are about 0.5 to 0.8 points per 100 possessions worse. The biggest surpluses sit "
@@ -232,7 +233,8 @@ s.append(P("The blended value is shrunk, so it is put back on a real scale by ca
 s[-1] = KeepTogether([s[-1], P("WAR = (value − replacement) × possessions / 100 / 33.6", mono)])
 s.append(P("As a check, each team's wins are predicted from the previous season's player values and this season's "
            "minutes: correlation 0.79, mean absolute error 6.1 wins per 82 games (0.78 and 6.2 without the prior). A team of "
-           "replacement players wins about 29 games."))
+           "replacement players wins about 29 games. This check knows who played, so it is a test of the player "
+           "values. The forecast without that knowledge is tested in section 4.9."))
 s.append(P("3.4 Availability and injury risk", h2))
 s.append(P("Games lost to injury come from the injury log up to 2019-20 and from the official reports after that. The "
            "two sources differ in how many short absences they catch, so injury games are normalized within each "
@@ -460,10 +462,32 @@ s.append(table([
 s.append(figure(RFIG / "teams.png", "Figure 10. Projected wins for all 30 teams against the market's win totals. A "
                 "number marks a gap of 6 wins or more.", width=TEXT_W * 0.66))
 s.append(P("Against BetMGM's win totals the forecast is 4.2 wins apart on average (correlation 0.88). The model is "
-           "more careful at both ends, as a forecast that pulls towards the average should be: lower on the favorites "
-           "and higher on the worst teams. The biggest gaps are Milwaukee (+10) and New Orleans (+8) on one side, "
-           "Miami (−9), Indiana (−8) and Detroit (−8) on the other. The market's totals add up to 1,247 wins, 17 more "
-           "than there are games to win."))
+           "lower on the favorites and higher on the worst teams, and section 4.9 shows that part of that is the "
+           "model being too careful at both ends. The biggest gaps are in the middle and stay either way: Milwaukee "
+           "(+10) and New Orleans (+8) on one side, Miami (−9), Indiana (−8) and Detroit (−8) on the other. The "
+           "market's totals add up to 1,247 wins, 17 more than there are games to win."))
+
+s.append(P("4.9 How good is the forecast?", h2))
+s.append(P("The honest test is the forecast as it would have been made each October. For the 13 seasons from "
+           "2013-14 every team gets the players who played their first game of the season for it, with the "
+           "projections from the season before, and the simulator runs as it does today. The benchmark is the Vegas "
+           "win total for the same team (basketball-reference's preseason odds), next to two naive guesses."))
+s.append(figure(FIG / "forecast_backtest.png", "Figure 11. Left: average miss in wins per 82 games, 390 team-seasons. "
+                "Right: the playoff chance the simulator gave against how often those teams made it, dot size is the "
+                "number of teams."))
+s.append(P("Guessing 41 wins for everyone misses by 10.2 wins a team and last season's record by 8.8. Our forecast "
+           "misses by 7.1 and the Vegas line by 6.7. Two things stand out. Our forecasts sit too close to the middle: "
+           "teams end up 1.23 times as far from 41 wins as we say, while the market's lines are a little too wide "
+           "(0.86). Stretched by that factor, learned on the other seasons, our miss is 6.8, level with Vegas "
+           "within the noise (difference +0.14, 95% interval −0.3 to +0.7). And the two know different things: in "
+           "one regression each carries about half the weight (ours 0.57, interval 0.28 to 0.84), and together they "
+           "miss by 6.6. The playoff odds are close to what happened: teams given about 50% made it 53% of the "
+           "time, teams given 83% made it 77%."))
+s.append(P("The stretched forecast was on the right side of the Vegas line 58% of the time, and 67% of the time "
+           "when the two were 4 or more wins apart (156 cases, always taking the under wins 53%). That needs care: "
+           "the aging curve, the calibration and the injury model are fitted on all seasons, the rosters know who "
+           "never played that season, and the lines are from one source. The frozen 2026-27 forecast is the clean "
+           "test. It was made before this backtest and is not stretched."))
 
 # 5
 s.append(P("5. Using it in a front office", h1))
@@ -531,6 +555,9 @@ s += bullets([
     "measure).",
     "The salary analyses show associations: timing of signings and contract years are not modeled, and the "
     "rookie-contract flag is approximate.",
+    "The forecast backtest is not fully out of sample: the aging curve, the calibration, the injury model and "
+    "the rookie model are fitted on all seasons, and a player who missed a whole season is left off his team, "
+    "which the market mostly knew too but not always.",
     "Model results will disagree with reputation for some players, most visibly high-usage scorers. That is partly "
     "the point, and partly the noise in the first bullet."])
 
@@ -579,6 +606,10 @@ s.append(table([
     ["Season simulator", "net per 100 from rosters (best players first, filler at replacement) + lineup shape; "
      "playoff minute shares in the playoff rounds; real schedule format, play-in, best-of-seven",
      "team wins MAE 6.1; playoff game RMSE 13.913 -> 13.901"],
+    ["Forecast backtest", "the simulator as of each October 2013-2025: every player's team in his first game, "
+     "projections from the season before, draftees at their slot, the rest filler; vs Vegas win totals per 82; "
+     "stretch and blend weights from the other seasons", "MAE 7.05 (6.84 stretched) vs Vegas 6.70; bootstrap over "
+     "seasons"],
     ["Positions", "roles from box stats per 36 (rebounds, blocks, assists, 3PA), k-means into guard / wing / big; "
      "stint margin minus the ten players' RAPM ~ bigs and guards on each side", "467,485 stints; bootstrap over "
      "games"],
@@ -592,14 +623,15 @@ for line in ["check_api, ingest, lineups, rapm, players, box_prior, aging, draft
              "availability, injury, injury_types, injury_windows",
              "current_injuries, war, rookies, surplus (uses options), threes, playoffs, defense",
              "market_value, scrape_transactions, trade_value, playoff_stints, playoff_rotation, positions",
-             "season_sim, arbitrage, freeze --version v2",
+             "season_sim, arbitrage, forecast_backtest, freeze --version v2",
              "report/make_figures.py, report/build_report.py"]:
     s.append(P(line, mono))
 s.append(Spacer(1, 6))
 s.append(P("Data: play-by-play from github.com/shufinskiy/nba_data; stats.nba.com through nba_api; injury log from "
            "github.com/gboogy/nba-injury-data-scraper (ProSportsTransactions); injury reports from the NBA's official "
            "PDFs; salaries, contracts, transactions and MVP votes from basketball-reference.com; draft history and rosters "
-           "from nba.com; win totals from BetMGM (September 23, 2026).", caption))
+           "from nba.com; win totals from BetMGM (September 23, 2026) and basketball-reference's preseason odds pages "
+           "(2011-12 to 2025-26).", caption))
 
 
 # headings stick to whatever comes right after them (keepWithNext alone didn't do it with KeepTogether blocks)
