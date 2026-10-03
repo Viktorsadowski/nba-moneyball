@@ -4,6 +4,8 @@ Figures that only the report needs (the analysis figures come from src/, figures
 
   report/figures/pipeline.png   how the pieces fit together
   report/figures/market.png     projected WAR vs salary next season, with the market price line
+  report/figures/surplus_bars.png  the ten biggest surpluses and deficits over the remaining contract
+  report/figures/teams.png      projected wins for all 30 teams (the frozen forecast) vs the market's win totals
 
   python report/make_figures.py
 """
@@ -19,10 +21,11 @@ import pandas as pd
 from matplotlib.patches import FancyArrowPatch, FancyBboxPatch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
-from config import PROCESSED_DIR  # noqa: E402
+from config import PROCESSED_DIR, ROOT  # noqa: E402
 
 OUT = Path(__file__).resolve().parent / "figures"
 SURFACE, INK, MUTED, GRID, BLUE, ORANGE = "#fcfcfb", "#0b0b0b", "#52514e", "#e6e5e0", "#2a78d6", "#eb6834"
+GREY = "#9a9893"
 LIGHT_BLUE, LIGHT_ORANGE, LIGHT_GREY = "#e3eefb", "#fdeadf", "#f0efeb"
 
 
@@ -125,7 +128,77 @@ def market() -> None:
     plt.close(fig)
 
 
+def surplus_bars(n: int = 10) -> None:
+    # same numbers as the surplus table, whole remaining contract. blue = worth more than he costs, orange = less
+    s = pd.read_parquet(PROCESSED_DIR / "surplus.parquet").dropna(subset=["surplus"])
+    fig, axes = plt.subplots(1, 2, figsize=(8.4, 3.3), dpi=200)
+    fig.patch.set_facecolor(SURFACE)
+    for ax, d, col, title in ((axes[0], s.nlargest(n, "surplus"), BLUE, "Most underpaid"),
+                              (axes[1], s.nsmallest(n, "surplus"), ORANGE, "Most overpaid")):
+        d = d.iloc[::-1]
+        v = d["surplus"] / 1e6
+        ax.set_facecolor(SURFACE)
+        ax.barh(d["name"], v.abs(), color=col, height=0.62)
+        for i, x in enumerate(v):
+            ax.text(abs(x) + 4, i, f"{x:+.0f}".replace("-", "\u2212"), va="center", fontsize=7.5, color=INK)
+        ax.set_title(title, loc="left", fontsize=9, color=INK)
+        ax.set_xlim(0, s["surplus"].abs().max() / 1e6 * 1.15)
+        ax.set_xlabel(("surplus" if col == BLUE else "deficit") + " over the remaining contract, $M", color=MUTED,
+                      fontsize=8)
+        ax.tick_params(colors=MUTED, labelsize=8, length=0)
+        ax.tick_params(axis="y", labelcolor=INK)
+        ax.grid(axis="x", color=GRID, lw=0.7)
+        ax.set_axisbelow(True)
+        for sp in ("top", "right", "left"):
+            ax.spines[sp].set_visible(False)
+        ax.spines["bottom"].set_color(GRID)
+    fig.tight_layout(w_pad=2.5)
+    fig.savefig(OUT / "surplus_bars.png", facecolor=SURFACE, bbox_inches="tight", pad_inches=0.08)
+    plt.close(fig)
+
+
+def teams() -> None:
+    # the frozen forecast (forecasts/, so the figure can't drift from what was committed) vs the market's win
+    # totals (data/win_totals_2026.csv, typed in by hand). no file = no figure
+    wt = ROOT / "data" / "win_totals_2026.csv"
+    fc = ROOT / "forecasts" / "2026-27-v2" / "teams.csv"
+    if not (wt.exists() and fc.exists()):
+        print("no win totals or no frozen forecast, skipping teams.png")
+        return
+    m = pd.read_csv(wt).set_index("team").join(pd.read_csv(fc).set_index("team")["proj_wins"])
+    m = m.sort_values("proj_wins")
+    y = np.arange(len(m))
+    fig, ax = plt.subplots(figsize=(6.4, 6.0), dpi=200)
+    fig.patch.set_facecolor(SURFACE)
+    ax.set_facecolor(SURFACE)
+    ax.hlines(y, m[["proj_wins", "win_total"]].min(axis=1), m[["proj_wins", "win_total"]].max(axis=1), color=GRID, lw=2)
+    ax.scatter(m["win_total"], y, s=26, color=GREY, zorder=3, label=f"market win total ({m['source'].iloc[0]}, "
+               f"{pd.to_datetime(m['date'].iloc[0]):%B %d})".replace(" 0", " "))
+    ax.scatter(m["proj_wins"], y, s=30, color=BLUE, zorder=4, label="our projection")
+    # only the big disagreements get a number
+    gap = m["proj_wins"] - m["win_total"]
+    for i, g in enumerate(gap):
+        if abs(g) >= 6:
+            ax.text(max(m["proj_wins"].iloc[i], m["win_total"].iloc[i]) + 0.9, i, f"{g:+.0f}".replace("-", "\u2212"),
+                    va="center", fontsize=7.5, color=INK)
+    ax.set_yticks(y)
+    ax.set_yticklabels(m.index, fontsize=7.5, color=INK)
+    ax.set_ylim(-0.8, len(m) - 0.2)
+    ax.set_xlabel("wins in 2026-27", color=MUTED, fontsize=8.5)
+    ax.grid(axis="x", color=GRID, lw=0.7)
+    ax.set_axisbelow(True)
+    for sp in ("top", "right", "left"):
+        ax.spines[sp].set_visible(False)
+    ax.spines["bottom"].set_color(GRID)
+    ax.tick_params(colors=MUTED, labelsize=8, length=0)
+    ax.legend(frameon=False, fontsize=8, loc="lower right", labelcolor=INK)
+    fig.savefig(OUT / "teams.png", facecolor=SURFACE, bbox_inches="tight", pad_inches=0.08)
+    plt.close(fig)
+
+
 if __name__ == "__main__":
     pipeline()
     market()
+    surplus_bars()
+    teams()
     print(f"figures -> {OUT}")

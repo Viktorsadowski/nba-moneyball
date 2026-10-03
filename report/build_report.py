@@ -363,6 +363,8 @@ s.append(table([
     1.0 * cm, 1.5 * cm],
     "Table 3. Surplus over the whole remaining contract (salary, WAR and surplus summed over its years), with team "
     "and player options valued as options."))
+s.append(figure(RFIG / "surplus_bars.png", "Figure 6. The ten largest surpluses and deficits over the remaining "
+                "contract, $M.", width=TEXT_W * 0.9))
 s.append(P("The market price of a win for 2026-27 is about $8.4M. At that price only 37% of players under contract "
            "project to earn their salary next season, and 7 of the 27 players paid $45M or more. The largest "
            "surpluses in the league sit on young players on rookie-scale or early extension deals, and on players "
@@ -381,7 +383,7 @@ s.append(P("For every player-season from 2011-12 on, salary is expressed in wins
            "the projected WAR made the summer before, 3-point attempts per 36 minutes and 3-point percentage from the "
            "previous season (both as z-scores within the season), a rookie-contract flag and age. A positive "
            "coefficient on shooting means shooters are paid more than the wins they are expected to bring."))
-s.append(figure(FIG / "threes.png", "Figure 6. Extra salary per season for one standard deviation more 3-point volume "
+s.append(figure(FIG / "threes.png", "Figure 7. Extra salary per season for one standard deviation more 3-point volume "
                 "(blue) or accuracy (orange), at the same expected wins. Bands are 95% bootstrap intervals over "
                 "players.", width=TEXT_W * 0.86))
 s.append(table([
@@ -401,7 +403,7 @@ s.append(P("Until 2019 high-volume shooters were slightly underpaid for the wins
            "score, and the accurate shooter is the bargain."))
 
 s.append(P("4.6 Does defense win championships?", h2))
-s.append(figure(FIG / "defense.png", "Figure 7. Left: points of game margin per point of regular-season rating edge, "
+s.append(figure(FIG / "defense.png", "Figure 8. Left: points of game margin per point of regular-season rating edge, "
                 "offense and defense, with 95% intervals (playoffs bootstrapped over series). Right: every playoff "
                 "team since 2010-11; diagonals connect teams with the same net rating."))
 s.append(P("Each team's regular-season offense and defense are measured against the league average, and the margin of "
@@ -420,7 +422,7 @@ s.append(P("The market model says what teams pay for a box score. Consistency is
            "on big deals. Which one is right can be tested with the one judge neither side controls: wins. For every "
            "team-season since 2013-14 the players were valued three ways before the season (payroll, the market "
            "model and our projected WAR), each scaled by how much they then played."))
-s.append(figure(FIG / "arbitrage.png", "Figure 8. Error predicting team wins per 82 games from what the roster was "
+s.append(figure(FIG / "arbitrage.png", "Figure 9. Error predicting team wins per 82 games from what the roster was "
                 "worth before the season, 390 team-seasons, each season predicted from the others.",
                 width=TEXT_W * 0.68))
 s.append(P("Payroll misses by 8.0 wins, the market model by 7.2 and our model by 6.4. In one regression with all "
@@ -455,6 +457,13 @@ s.append(table([
     "Table 5. Projected 2026-27, 10,000 simulated seasons. The full forecast for all 30 teams and every player was "
     "frozen on October 1, before opening night (forecasts/2026-27-v2 in the repository), to be scored after the "
     "season."))
+s.append(figure(RFIG / "teams.png", "Figure 10. Projected wins for all 30 teams against the market's win totals. A "
+                "number marks a gap of 6 wins or more.", width=TEXT_W * 0.66))
+s.append(P("Against BetMGM's win totals the forecast is 4.2 wins apart on average (correlation 0.88). The model is "
+           "more careful at both ends, as a forecast that pulls towards the average should be: lower on the favorites "
+           "and higher on the worst teams. The biggest gaps are Milwaukee (+10) and New Orleans (+8) on one side, "
+           "Miami (−9), Indiana (−8) and Detroit (−8) on the other. The market's totals add up to 1,247 wins, 17 more "
+           "than there are games to win."))
 
 # 5
 s.append(P("5. Using it in a front office", h1))
@@ -590,7 +599,7 @@ s.append(Spacer(1, 6))
 s.append(P("Data: play-by-play from github.com/shufinskiy/nba_data; stats.nba.com through nba_api; injury log from "
            "github.com/gboogy/nba-injury-data-scraper (ProSportsTransactions); injury reports from the NBA's official "
            "PDFs; salaries, contracts, transactions and MVP votes from basketball-reference.com; draft history and rosters "
-           "from nba.com.", caption))
+           "from nba.com; win totals from BetMGM (September 23, 2026).", caption))
 
 
 # headings stick to whatever comes right after them (keepWithNext alone didn't do it with KeepTogether blocks)

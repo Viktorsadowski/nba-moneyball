@@ -2,7 +2,7 @@
 
 What is each NBA player actually worth, compared to what he gets paid?
 
-**[Read the report (PDF, 13 pages)](report/nba_moneyball_report.pdf)**
+**[Read the report (PDF, 14 pages)](report/nba_moneyball_report.pdf)**
 
 **[Case study: How do we get Bron his last ring? (PDF, 9 pages)](report/phi_case_last_ring.pdf)**, the trades that give the 2026-27 76ers the best title odds
 
