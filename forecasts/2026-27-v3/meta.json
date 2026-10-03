@@ -1,0 +1,26 @@
+{
+  "season": "2026-27",
+  "frozen_utc": "2026-10-03T17:00:04+00:00",
+  "data_through": "2025-26",
+  "git_commit_at_freeze": "unknown",
+  "model": {
+    "rapm": "ridge with box-score prior (box_prior.py)",
+    "value": "50/30/20 x minutes, 250 ghost min, aged",
+    "calibration_a": 1.1932967008958881,
+    "calibration_c": -0.7843456191163942,
+    "replacement": -1.048054707784341,
+    "points_per_win": 33.581535035877664,
+    "rookie_raw_value": -0.8999465263802079
+  },
+  "version": "v3",
+  "since_v1": "young-player bump + rookies by draft slot (rookies.py), rosters + dead money (rosters.py), current injuries without ended careers, teams from season_sim.py with lineup shapes (positions.py) and playoff rotations (playoff_rotation.py)",
+  "sha256": {
+    "players.csv": "ae3cc0926a444cd16b25a9265b755415b8838203bd1b28451dab6c8f83d1c87d",
+    "teams.csv": "88e692876298ff293fc6b6e144240ee20b7df98e034cb537aef1fdfb1396a1bd"
+  },
+  "simulator": {
+    "stretch": 1.28,
+    "mae_wins": 6.8
+  },
+  "since_v2": "team strength stretched and the uncertainty widened, both from the preseason forecast backtest against 13 seasons (forecast_backtest.py). players.csv unchanged"
+}

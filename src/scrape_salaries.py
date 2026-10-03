@@ -132,12 +132,16 @@ def scrape_contracts(sess) -> None:
         t.columns = [c[-1] for c in t.columns]
     t = t[t["Player"].notna() & (t["Player"] != "Player")]
     seasons = [c for c in t.columns if re.fullmatch(r"\d{4}-\d{2}", str(c))]
-    long = t.melt(id_vars=["Player", "Tm"], value_vars=seasons, var_name="season_label", value_name="salary")
+    # Guaranteed is per team row: a bought-out player has one row per team, the salary cells are his total
+    # on both, the guaranteed column is what that team owes (surplus.contracts_with_ids splits them)
+    long = t.melt(id_vars=["Player", "Tm", "Guaranteed"], value_vars=seasons, var_name="season_label",
+                  value_name="salary")
     long["salary"] = long["salary"].map(money)
+    long["guaranteed"] = long["Guaranteed"].map(money)
     long = long.dropna(subset=["salary"])
     long["season"] = long["season_label"].str[:4].astype(int)
     long["team"] = long["Tm"].map(lambda a: TO_NBA.get(a, a))
-    long = long.rename(columns={"Player": "player"})[["player", "team", "season", "salary"]]
+    long = long.rename(columns={"Player": "player"})[["player", "team", "season", "salary", "guaranteed"]]
     long.to_parquet(RAW_DIR / "contracts.parquet", index=False)
     print(f"  contracts: {long['player'].nunique()} players, seasons {min(seasons)} to {max(seasons)}")
 

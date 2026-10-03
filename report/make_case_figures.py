@@ -48,14 +48,16 @@ def curve(now_w: float, plan_w: float) -> None:
         ax.plot(c["wins"], c[k] * 100, color=col, lw=2, label=lab)
     for x, lab in ((now_w, "now"), (52, "target 1"), (60, "target 2"), (plan_w, "the plan")):
         ax.axvline(x, color=GRID if lab.startswith("target") else INK, lw=0.9, ls="--" if lab.startswith("target") else "-")
-        # the plan sits close to target 2, its label goes on the left of the line
-        ax.text(x - 2.1 if lab == "the plan" else x + 0.2, 101, lab, fontsize=7.5,
+        # the plan sits close to target 2: whichever of the two is further left gets its label left of the line
+        left = "the plan" if plan_w < 60 else "target 2"
+        ax.text(x - 2.1 if lab == left else x + 0.2, 101, lab, fontsize=7.5,
                 color=MUTED if lab.startswith("target") else INK)
     ax.set_xlabel("projected wins", color=MUTED, fontsize=8.5)
     ax.set_ylabel("chance, %", color=MUTED, fontsize=8.5)
     ax.set_ylim(0, 108)
     ax.grid(axis="y", color=GRID, lw=0.6)
-    ax.legend(frameon=False, fontsize=8, loc="center right", labelcolor=INK)
+    # top left is the only corner no curve runs through
+    ax.legend(frameon=False, fontsize=8, loc="upper left", labelcolor=INK)
     fig.tight_layout()
     fig.savefig(OUT / "case_curve.png", facecolor=SURFACE)
     plt.close(fig)
@@ -117,7 +119,7 @@ def picks() -> None:
 
 def scenarios(sc: pd.DataFrame, now: dict) -> None:
     rows = [("now", now)] + [(r["label"], r) for _, r in sc.iterrows()]
-    fig, ax = plt.subplots(figsize=(7.2, 3.4), dpi=200)
+    fig, ax = plt.subplots(figsize=(7.2, 2.8), dpi=200)
     fig.patch.set_facecolor(SURFACE)
     style(ax)
     x = np.arange(len(rows))
@@ -132,6 +134,8 @@ def scenarios(sc: pd.DataFrame, now: dict) -> None:
     ax.set_xticklabels([n for n, _ in rows], fontsize=7.8, color=INK)
     ax.set_ylabel("chance, %", color=MUTED, fontsize=8.5)
     ax.grid(axis="y", color=GRID, lw=0.6)
+    ax.set_ylim(0, 122)                 # room for the legend above the 100% bars
+    ax.set_yticks(range(0, 101, 20))
     ax.legend(frameon=False, fontsize=8, labelcolor=INK, ncol=3, loc="upper left")
     fig.tight_layout()
     fig.savefig(OUT / "case_scenarios.png", facecolor=SURFACE)
@@ -147,7 +151,7 @@ if __name__ == "__main__":
     sc["label"] = ["best, tax line", "one trade, 1st apron", "one trade, 2nd apron", "best, 1st apron"]
     odds = pd.read_parquet(PROCESSED_DIR / "season_odds.parquet").set_index("team").loc["PHI"]
     now = dict(playoffs=odds["playoffs"], finals=odds["finals"], title=odds["title"], wins=odds["wins"])
-    # the recommended plan = best under the 1st apron (the 2nd apron adds a little for more tax and the 1st)
+    # the recommended plan = best under the 1st apron (the 2nd apron finds the same trades)
     best = sc[sc["tag"] == "max title, under apron1"].iloc[0]
     curve(now["wins"], best["wins"])
     plan = best["trades"]

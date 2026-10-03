@@ -161,7 +161,7 @@ def teams() -> None:
     # the frozen forecast (forecasts/, so the figure can't drift from what was committed) vs the market's win
     # totals (data/win_totals_2026.csv, typed in by hand). no file = no figure
     wt = ROOT / "data" / "win_totals_2026.csv"
-    fc = ROOT / "forecasts" / "2026-27-v2" / "teams.csv"
+    fc = ROOT / "forecasts" / "2026-27-v3" / "teams.csv"
     if not (wt.exists() and fc.exists()):
         print("no win totals or no frozen forecast, skipping teams.png")
         return

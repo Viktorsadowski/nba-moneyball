@@ -26,8 +26,8 @@ Main findings:
 - Defense does not win championships: in the playoffs a point of defensive edge is worth no more than a point of
   offensive edge.
 
-The 2026-27 projections are frozen in [forecasts/2026-27](forecasts/2026-27) before the season, to be tested
-against what happens (see Forward test below).
+The 2026-27 projections are frozen in [forecasts](forecasts) before the season (latest: 2026-27-v3, October 3),
+to be tested against what happens (see Forward test below).
 
 Play-by-play from [shufinskiy/nba_data](https://github.com/shufinskiy/nba_data) (stats.nba.com v3 format),
 rosters, minutes and box scores from stats.nba.com via nba_api, injuries from ProSportsTransactions and the
@@ -97,6 +97,7 @@ During or after the season, check them against what happened (teams, stints, ava
 ```
 python src/freeze.py                 # -> forecasts/2026-27/ (players.csv, teams.csv, meta.json with sha256)
 python src/freeze.py --version v2    # -> forecasts/2026-27-v2/, after season_sim.py, teams with playoff / title odds
+python src/freeze.py --version v3    # -> forecasts/2026-27-v3/, same after the simulator got its stretch (forecast_backtest.py)
 git add forecasts
 git commit -m "freeze 2026-27 forecast"
 

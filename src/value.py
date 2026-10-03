@@ -15,6 +15,10 @@ Age adjustment (needs aging.py first): every past season gets moved along the ag
 age he'll be NEXT season, before blending. A 21-year-old's rookie year counts as better than it was,
 a 34-year-old's good year from 3 seasons ago counts as worse. So the value is a projection of next season.
 
+Young players (needs draft.py): seasons 2-4 get a bump by pick group, top picks keep improving faster
+than the aging curve says (rookies.py tests it). as of season s it's only learned from seasons up to s.
+The backtest grid below is without it.
+
 Backtest: blend seasons t-3..t-1, predict season t RAPM, error weighted by season t minutes.
 Tells us whether 50/30/20, the ghost minutes and the age adjustment actually help.
 (small leak: the aging curve is fit on all seasons incl. the ones being predicted, the curve is
@@ -158,6 +162,31 @@ if __name__ == "__main__":
         out.append(v)
     val = pd.concat(out, ignore_index=True)
     val["name"] = val["player_id"].map(names)
+
+    # young players: seasons 2-4 still get better than the aging curve says, most for top picks.
+    # bump by pick group x season in the league (rookies.py), as of s only learned from seasons up to s
+    dpath = RAW_DIR / "draft.parquet"
+    if use_age and dpath.exists():
+        import rookies as R
+        draft = pd.read_parquet(dpath).drop_duplicates("player_id").set_index("player_id")
+        err = R.young_errors(draft.reset_index(), pd.read_parquet(PROCESSED_DIR / "rapm.parquet"))
+        val["dev_bump"] = 0.0
+        for s in sorted(val["season"].unique()):
+            m = val["season"] == s
+            pick = val.loc[m, "player_id"].map(draft["pick"])
+            yr = s + 2 - val.loc[m, "player_id"].map(draft["draft_year"])     # his season in the league next season
+            key = list(zip(R.pick_group(pick.to_numpy()), yr))
+            for side in ("o", "d"):
+                b = R.dev_bump(err[err["season"] <= s], f"{side}_")
+                add = np.array([b.get(k, 0.0) for k in key])
+                val.loc[m, f"{side}_val"] += add
+                val.loc[m, "dev_bump"] += add
+        val["val"] = val["o_val"] + val["d_val"]
+        last = val[val["season"] == val["season"].max()]
+        print(f"\nyoung-player bump: {(last['dev_bump'] != 0).sum()} players in the last as-of season, "
+              f"mean {last.loc[last['dev_bump'] != 0, 'dev_bump'].mean():+.2f} per 100")
+    else:
+        print("\nno draft.parquet (python src/draft.py) or no aging curve: no young-player bump")
     val.to_parquet(PROCESSED_DIR / "value.parquet", index=False)
 
     last = val["season"].max()

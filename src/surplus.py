@@ -38,8 +38,13 @@ def aging_fn():
     return np.poly1d(np.polyfit(c["age"], c["curve"], 2))
 
 
-def contracts_with_ids() -> pd.DataFrame:
-    """future contract years -> player ids, matched on the last three seasons' players."""
+def contracts_with_ids(include_dead: bool = False) -> pd.DataFrame:
+    """future contract years -> player ids.
+    with rosters.py's output: ids straight from the rosters (name match), and every row whose player isn't on
+    that team's roster is dead money (bought out / waived). a player with two team rows gets split: the team
+    he plays for pays its guaranteed amount from next season on, the rest stays with the old team.
+    without it: matched on the last three seasons' players like before, nothing flagged.
+    include_dead=False (surplus, freeze): only the contracts of players where they play now."""
     c = pd.read_parquet(RAW_DIR / "contracts.parquet")
     c["player"] = c["player"].map(unmojibake)
     p = pd.concat([pd.read_parquet(RAW_DIR / f"players_{y}.parquet") for y in list(SEASONS)[-3:]])
@@ -56,11 +61,57 @@ def contracts_with_ids() -> pd.DataFrame:
                 return next(iter(hit))
         return None
 
-    c["player_id"] = [find(n, t) for n, t in zip(c["player"], c["team"])]
-    miss = c[c["player_id"].isna()]["player"].unique()
-    print(f"contracts: {c['player'].nunique()} players, {len(miss)} not matched to our data "
-          f"(mostly 2026 draftees / never played): {', '.join(miss[:6])}...")
-    return c.dropna(subset=["player_id"])
+    rpath = RAW_DIR / "rosters.parquet"
+    if not rpath.exists():
+        c["player_id"] = [find(n, t) for n, t in zip(c["player"], c["team"])]
+        c["dead"] = False
+        miss = c[c["player_id"].isna()]["player"].unique()
+        print(f"contracts: {c['player'].nunique()} players, {len(miss)} not matched to our data "
+              f"(mostly 2026 draftees / never played, run rosters.py): {', '.join(miss[:6])}...")
+        return c.dropna(subset=["player_id"])
+
+    ro = pd.read_parquet(rpath)
+    # roster names: full, then without suffix ("Labaron Philon" vs "Labaron Philon Jr.")
+    r_full, r_team = {}, {}
+    for pid, n, t in zip(ro["player_id"], ro["name"].map(unmojibake), ro["team"]):
+        for k in {compact(n), unsuffix(compact(n))}:
+            r_full.setdefault(k, set()).add(pid)
+        r_team[pid] = t
+
+    def find_roster(n):
+        for hit in (r_full.get(compact(n)), r_full.get(unsuffix(compact(n)))):
+            if hit and len(hit) == 1:
+                return next(iter(hit))
+        return None
+
+    c["player_id"] = [find_roster(n) for n in c["player"]]
+    on = c["player_id"].notna()
+    c["dead"] = ~on | (c["player_id"].map(r_team) != c["team"])
+    # not on any roster (waived, unsigned): still his old id if we have one, for the payroll only
+    c.loc[~on, "player_id"] = pd.array([find(n, t) for n, t in zip(c.loc[~on, "player"], c.loc[~on, "team"])],
+                                       dtype="float64")
+
+    # two team rows: salary cells are his total, split by what the current team guaranteed
+    multi = c.groupby("player")["team"].transform("nunique") > 1
+    for n, g in c[multi].groupby("player"):
+        cur = g[~g["dead"]]
+        if cur.empty:
+            continue
+        left = float(cur["guaranteed"].iloc[0])
+        for i in cur.sort_values("season").index:
+            pay = min(left, c.at[i, "salary"])
+            left -= pay
+            old = g[g["dead"] & (g["season"] == c.at[i, "season"])].index
+            c.loc[old, "salary"] = c.loc[old, "salary"] - pay     # the old team(s) keep the rest
+            c.at[i, "salary"] = pay
+    c = c[c["salary"] > 0]
+    dead = c[c["dead"] & (c["season"] == c["season"].min())]
+    print(f"contracts: {c.loc[~c['dead'], 'player'].nunique()} players on rosters, "
+          f"{dead['player'].nunique()} rows of dead money next season "
+          f"(${dead['salary'].sum() / 1e6:.0f}M, e.g. {', '.join(dead.nlargest(4, 'salary')['player'])})")
+    if not include_dead:
+        c = c[~c["dead"]]
+    return c if include_dead else c.dropna(subset=["player_id"])
 
 
 def dollars_per_war(war: pd.DataFrame, sal: pd.DataFrame) -> pd.Series:

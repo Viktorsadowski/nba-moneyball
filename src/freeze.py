@@ -19,6 +19,8 @@ Won't overwrite an existing freeze (--force if you really mean it).
 later changes helped. teams.csv then comes from the season simulator (season_sim.py: rookie model, minutes best
 players first, lineup shapes, playoff rotations) with playoff / Finals / title odds, players.csv as before.
 
+--version v3: same, after the simulator got its stretch and its uncertainty from forecast_backtest.py.
+
   python src/freeze.py
   python src/freeze.py --version v2      # after season_sim.py
 """
@@ -133,6 +135,12 @@ if __name__ == "__main__":
                      "(positions.py) and playoff rotations (playoff_rotation.py)") if args.version else None,
         "sha256": {"players.csv": sha256(out / "players.csv"), "teams.csv": sha256(out / "teams.csv")},
     }
+    if args.version and args.version != "v2":
+        # what the simulator ran with, v2 was before these two existed (stretch 1.0, MAE 6.1)
+        import season_sim as S
+        meta["simulator"] = {"stretch": S.STRETCH, "mae_wins": S.MAE_WINS}
+        meta["since_v2"] = ("team strength stretched and the uncertainty widened, both from the preseason "
+                            "forecast backtest against 13 seasons (forecast_backtest.py). players.csv unchanged")
     (out / "meta.json").write_text(json.dumps(meta, indent=2))
 
     print(f"frozen {season_label(target)} -> {out}")

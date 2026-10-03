@@ -14,7 +14,9 @@ This one doesn't:
   benchmarks  everyone wins 41, same as last season, the Vegas win total (data/win_totals_history.csv, from
               basketball-reference's preseason odds pages, typed over by hand). all per 82 games, the 2011,
               2019 and 2020 seasons were shorter
-  stretch     our forecasts sit too close to 41. the factor that fixes it is learned on the other seasons
+  stretch     built this way the forecasts sat too close to 41, so season_sim now stretches team strength
+              (STRETCH). here: the forecast without it, with a stretch learned on the other seasons (the honest
+              number), and the simulator as it is now (its factor has seen all these seasons)
   over/under  which side of the line were we on, and was that side right
 
 Not fully out of sample: the aging curve, the calibration, the injury model and the rookie model are fitted
@@ -116,8 +118,13 @@ if __name__ == "__main__":
     v["line"] = v["win_total"] * 82 / v["sched"]
     v["wins82"] = v["wins"] / (v["wins"] + v["losses"]) * 82
     last = v[["season", "team", "wins82"]].assign(season=lambda d: d["season"] + 1).rename(columns={"wins82": "last"})
+    # once without season_sim's stretch (to measure it), once as the simulator runs today
+    k_now, S.STRETCH = S.STRETCH, 1.0
+    raw = forecasts(range(FIRST, max(SEASONS) + 1))
+    S.STRETCH = k_now
     f = forecasts(range(FIRST, max(SEASONS) + 1))
-    x = (v.merge(f[["season", "team", "wins", "playoffs"]].rename(columns={"wins": "ours"}), on=["season", "team"])
+    x = (v.merge(raw[["season", "team", "wins"]].rename(columns={"wins": "ours"}), on=["season", "team"])
+          .merge(f[["season", "team", "wins", "playoffs"]].rename(columns={"wins": "now"}), on=["season", "team"])
           .merge(last, on=["season", "team"]).merge(made_playoffs(abbr), on=["season", "team"], how="left"))
     x["made"] = x["made"].fillna(0)
     x["ours_s"] = left_out(x, ["ours"])
@@ -128,22 +135,27 @@ if __name__ == "__main__":
           "on average, 1,230 are there to win")
 
     err = lambda c: float((x["wins82"] - c).abs().mean())
-    res = {"everyone wins 41": err(41), "same as last season": err(x["last"]), "our forecast": err(x["ours"]),
-           "our forecast, stretched": err(x["ours_s"]), "Vegas win total": err(x["line"]),
-           "ours + Vegas": err(x["blend"])}
+    res = {"everyone wins 41": err(41), "same as last season": err(x["last"]),
+           "ours before the stretch": err(x["ours"]), "our forecast": err(x["ours_s"]),
+           "Vegas win total": err(x["line"]), "ours + Vegas": err(x["blend"])}
     print("\nwins per 82, mean absolute error:")
     for k, e in res.items():
         print(f"  {k:26s} {e:.2f}")
     per = x.groupby("season").apply(lambda g: pd.Series({
         "ours": (g["wins82"] - g["ours_s"]).abs().mean(), "vegas": (g["wins82"] - g["line"]).abs().mean()}),
         include_groups=False)
-    print(f"  stretched forecast better than Vegas in {(per['ours'] < per['vegas']).sum()} of {n_seasons} seasons")
+    print(f"  our forecast better than Vegas in {(per['ours'] < per['vegas']).sum()} of {n_seasons} seasons")
+    print("  (our forecast = stretch learned on the other seasons)")
 
     # how far from 41 do teams really end up, per win we / the market put them away from it
     k_us = np.sum((x["ours"] - 41) * (x["wins82"] - 41)) / np.sum((x["ours"] - 41) ** 2)
     k_v = np.sum((x["line"] - 41) * (x["wins82"] - 41)) / np.sum((x["line"] - 41) ** 2)
-    print(f"\nspread: teams end up {k_us:.2f}x as far from 41 as we say, {k_v:.2f}x as far as the line says "
-          f"(sd of forecasts: ours {x['ours'].std():.1f}, Vegas {x['line'].std():.1f}, actual {x['wins82'].std():.1f})")
+    k_now_w = np.sum((x["now"] - 41) * (x["wins82"] - 41)) / np.sum((x["now"] - 41) ** 2)
+    print(f"\nspread: without the stretch teams end up {k_us:.2f}x as far from 41 as we say, {k_v:.2f}x as far as "
+          f"the line says (sd of forecasts: ours {x['ours'].std():.1f}, Vegas {x['line'].std():.1f}, "
+          f"actual {x['wins82'].std():.1f})")
+    print(f"the simulator as it is (STRETCH {S.STRETCH}): {k_now_w:.2f}x, MAE {err(x['now']):.2f} "
+          "(its factor was picked on these seasons) -> MAE_WINS and STRETCH in season_sim.py")
     # both in one regression, bootstrap over seasons
     X = np.column_stack([x["ours"] - 41, x["line"] - 41])
     b = np.linalg.lstsq(X, x["wins82"] - 41, rcond=None)[0]
@@ -188,7 +200,8 @@ if __name__ == "__main__":
     fig.patch.set_facecolor(surface)
     names = list(res)[::-1]
     # ours in blue, the benchmarks grey
-    a1.barh(names, [res[n] for n in names], color=[blue if "our" in n else grey for n in names], height=0.62)
+    a1.barh(names, [res[n] for n in names], color=[blue if n in ("our forecast", "ours + Vegas") else grey
+                                                   for n in names], height=0.62)
     for i, n in enumerate(names):
         a1.text(res[n] + 0.12, i, f"{res[n]:.2f}", va="center", fontsize=8, color=ink)
     a1.set_xlim(0, max(res.values()) + 1.2)

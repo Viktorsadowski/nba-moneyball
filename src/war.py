@@ -149,7 +149,22 @@ def projected_minutes(mins: pd.DataFrame, as_of: int) -> pd.DataFrame:
 
 # ── team check ────────────────────────────────────────────────────────────────
 
-def team_check(val: pd.DataFrame, ts: pd.DataFrame, rookie: float) -> pd.DataFrame:
+def draft_slot_values():
+    """t -> Series player_id -> rookie value of his draft slot (rookies.py), for the draft class of t.
+    None without draft.parquet"""
+    if not (RAW_DIR / "draft.parquet").exists():
+        return None
+    import rookies as R
+    draft, rapm, ages = R.load()
+
+    def slot(t):
+        coef = R.fit_rookie(R.rookie_table(draft[draft["draft_year"] < t], rapm, ages))
+        c = draft[draft["draft_year"] == t]
+        return pd.Series(R.predict(coef, c["pick"].to_numpy())["val"].to_numpy(), index=c["player_id"].to_numpy())
+    return slot
+
+
+def team_check(val: pd.DataFrame, ts: pd.DataFrame, rookie: float, slot=None) -> pd.DataFrame:
     """per team-season: predicted point differential from last season's values, and the real one."""
     rows = []
     for t in list(SEASONS)[3:]:
@@ -162,7 +177,11 @@ def team_check(val: pd.DataFrame, ts: pd.DataFrame, rookie: float) -> pd.DataFra
         ])
         tp = long.groupby(["team", "player_id"])["poss"].sum().reset_index()
         prev = val[val["season"] == t - 1].set_index("player_id")["val"]
-        tp["val"] = tp["player_id"].map(prev).fillna(rookie)
+        tp["val"] = tp["player_id"].map(prev)
+        if slot is not None:
+            # true rookies at their draft slot's value, model fitted on the drafts before t only
+            tp["val"] = tp["val"].fillna(tp["player_id"].map(slot(t)))
+        tp["val"] = tp["val"].fillna(rookie)
         g = tp.assign(pts=tp["val"] * tp["poss"] / 100).groupby("team")
         real = ts[ts["season"] == t].set_index("team")
         rows.append(pd.DataFrame({"season": t, "net": g["pts"].sum(), "pp100": g["poss"].sum() / 100,
@@ -197,7 +216,7 @@ if __name__ == "__main__":
     # (possessions from season t), then regress the real differential on it:
     #   real = a * predicted + c*possessions   ->   val_cal = a * val + c
     # out of sample by construction (t-1 values predicting t), a > 1 means the values were too timid
-    chk = team_check(val, ts, rookie)
+    chk = team_check(val, ts, rookie, draft_slot_values())
     X = np.column_stack([chk["net"], chk["pp100"]])
     a, c = np.linalg.lstsq(X, chk["diff"], rcond=None)[0]
     r_raw = np.corrcoef(chk["net"], chk["diff"])[0, 1]

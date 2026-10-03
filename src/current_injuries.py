@@ -7,6 +7,7 @@ still out with a torn ACL. This adds that, for the last season in the data:
 
   still out     listed out with an injury at the end of the season and no game since. from all the older
                 absences of the same type that had already lasted as long, how much longer did they last?
+                (for a player on a roster for next season, rosters.py, without the ones that never ended)
                 -> expected games of next season still missed. (a hamstring strain in April is long healed by
                 October, a January ACL often isn't.) types with too few long cases use all types together
   rust          ACL etc: the first 20 games back are a bit worse (injury_windows.py, shrunk estimate per type,
@@ -29,7 +30,7 @@ import re
 import numpy as np
 import pandas as pd
 
-from config import PROCESSED_DIR, SEASONS, season_label
+from config import PROCESSED_DIR, RAW_DIR, SEASONS, season_label
 from injury_types import MIN_GAMES, injury_type
 from injury_windows import RUST, all_spells, load_games
 
@@ -100,12 +101,17 @@ if __name__ == "__main__":
     hist = hist[[not moved(p, st, r) for p, st, r in zip(hist["pid"], hist["start"], hist["ret"])]]
     hist["severe"] = hist["note"].str.contains(SEVERE)
 
-    def remaining_games(typ: str, severe: bool, start: pd.Timestamp) -> tuple[float, float, int]:
+    # on a roster for next season (rosters.py) = he's coming back. the cases that never ended are mostly careers
+    # that ended, for a guy out a whole season they'd be most of the pool, so they're left out for him
+    rpath = RAW_DIR / "rosters.parquet"
+    rostered = set(pd.read_parquet(rpath)["player_id"]) if rpath.exists() else set()
+
+    def remaining_games(typ: str, severe: bool, start: pd.Timestamp, back: bool = False) -> tuple[float, float, int]:
         """expected games of next season missed, chance he's back by opening day, cases used.
         pool: same type and severity, then same severity any type, then everything"""
         e_obs = (end - start).days
         e0 = (t0 - start).days
-        long = hist[hist["days"] > e_obs]
+        long = hist[(hist["days"] > e_obs) & ~(back & np.isinf(hist["days"]))]
         pool = long[(long["type"] == typ) & (long["severe"] == severe)]["days"]
         if len(pool) < MIN_CASES:
             pool = long[long["severe"] == severe]["days"]
@@ -127,7 +133,7 @@ if __name__ == "__main__":
     cur = sp[sp["ret"].isna() & (sp["last"] >= end - pd.Timedelta(days=OUT_TAG))
              & ((sp["missed"] >= MIN_GAMES) | fresh_serious)]
     for r in cur.itertuples(index=False):
-        g, p_back, n = remaining_games(r.type, bool(SEVERE.search(str(r.note))), r.start)
+        g, p_back, n = remaining_games(r.type, bool(SEVERE.search(str(r.note))), r.start, int(r.pid) in rostered)
         # back during next season -> his first 20 games back carry the rust
         p_return = 1.0 if g < FULL - 0.5 else 0.0
         rows.append(dict(player_id=int(r.pid), status="out", type=r.type, out_since=r.start, note=r.note,
