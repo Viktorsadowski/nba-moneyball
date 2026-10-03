@@ -2,7 +2,7 @@
 """
 Builds report/phi_case_last_ring.pdf: the Philadelphia case on top of the main report (same look).
 
-Numbers in the text are from the September 2026 run. If it gets rerun, the text has to be updated by hand,
+Numbers in the text are from the October 2026 run. If it gets rerun, the text has to be updated by hand,
 the figures come along (report/make_case_figures.py, src/ figures).
 
   python report/make_case_figures.py
@@ -115,7 +115,7 @@ def on_page(c, doc):
     c.setFillColor(MUTED)
     if doc.page > 1:
         c.drawString(MARGIN, H - 1.25 * cm, "How do we get Bron his last ring?")
-        c.drawRightString(W - MARGIN, H - 1.25 * cm, "Viktor Sadowski, September 2026")
+        c.drawRightString(W - MARGIN, H - 1.25 * cm, "Viktor Sadowski, October 2026")
     c.drawCentredString(W / 2, 1.2 * cm, str(doc.page))
     c.restoreState()
 
@@ -128,7 +128,7 @@ s = []
 s += [Spacer(1, 1.2 * cm),
       P("How do we get Bron his last ring?", title),
       P("A trade plan for the 2026-27 Philadelphia 76ers, priced in wins, dollars and picks", subtitle),
-      P("Viktor Sadowski · September 2026 · code: nba-moneyball · a case study on top of "
+      P("Viktor Sadowski · October 2026 · code: nba-moneyball · a case study on top of "
         "\"What is an NBA player worth?\"", byline),
       Spacer(1, 0.6 * cm)]
 
@@ -148,7 +148,7 @@ s.append(box([
       "Tyrese Haliburton, Bam Adebayo, Aaron Nesmith, Davion Mitchell, Cam Spencer and Cedric Coward takes the 76ers "
       "to 58 wins, a 46% chance of reaching the Finals and 27% of winning it. It stays under the first apron, keeps "
       "15 players with enough bigs and guards to field normal lineups, pays for both players' trade bonuses, cuts the "
-      "tax bill from $21M to $13M, and costs all eight second-round picks while keeping the 2033 first. The other "
+      "tax bill from $16M to $9M, and costs all eight second-round picks while keeping the 2033 first. The other "
       "teams come out even by their own measure. No single trade gets close: the three need each other. 60 wins comes "
       "up just short.", abstract),
 ]))
@@ -165,8 +165,8 @@ s.append(table([
     ["", "2026-27"],
     ["Payroll (dead money included)", "$213.2M"],
     ["Luxury tax line / first apron / second apron", "$200.4M / $209.0M / $221.7M"],
-    ["Position", "$12.8M over the tax, $4.2M over the first apron"],
-    ["Tax bill (non-repeater rates)", "$21.2M"],
+    ["Position", "$12.7M over the tax, $4.2M over the first apron"],
+    ["Tax bill (non-repeater rates)", "$15.8M"],
     ["Tradeable picks", "2033 1st, eight 2nds (the other 1sts are locked by the Stepien rule or owed)"],
     ["Trade exceptions", "$4.2M and $2.3M"],
     ["Projection", "45.9 wins, playoffs 78%, Finals 10%, title 3.5%"],
@@ -184,8 +184,8 @@ s.append(figure(RFIG / "case_curve.png", "Figure 1. Philadelphia's odds by proje
                 "The Finals and title curves are steep exactly where the plan lands."))
 s.append(P("Moving the 76ers up the curve shows the two targets. 52 wins means a 95% chance of the playoffs, about "
            "3 points per 100 possessions better than now. 60 wins means about a 50% chance of the Finals, "
-           "roughly 7.5 points better. Wins are not worth the same everywhere: going from 46 to 50 wins adds 13 points "
-           "of playoff odds but only 4 of title odds, from 55 to 60 it adds 16 points of title odds. For a team "
+           "roughly 7 points better. Wins are not worth the same everywhere: going from 46 to 50 wins adds 13 points "
+           "of playoff odds but only 3 of title odds, from 55 to 60 it adds 18 points of title odds. For a team "
            "playing for a ring, the last wins are the valuable ones."))
 
 # 3
@@ -201,12 +201,13 @@ s.append(P("So the second model prices players the way the market does. It takes
            "Minimum and max contracts only say \"at most\" and \"at least\", so the fit is a Tobit. Rookie-scale deals "
            "are left out, the CBA sets those."))
 s.append(figure(FIG / "market_value.png", "Figure 2. New veteran contracts: predicted with the season left out vs "
-                "what was signed. Error 3.1% of the cap on deals between the minimum and the max, about $5M a year.",
+                "what was signed. Average miss 3.1% of the cap on the 991 deals between the minimum and the max, about "
+                "$5M a year.",
                 width=TEXT_W * 0.72))
 s.append(P("Three things stand out. Consistency is paid for: three seasons of stats predict better than the last one "
-           "(error 4.4% of the cap vs 4.7%), and games played over three years is one of the strongest terms. The "
-           "market pays for volume first. And it pays a little for impact: adding our RAPM value brings the error to "
-           "4.3%, but RAPM alone does about as well as the box score. A player's market value is then his market "
+           "(average miss 3.2% of the cap vs 3.4%), and games played over three years is one of the strongest terms. "
+           "The market pays for volume first. And it pays a little for impact: adding our RAPM value brings the miss "
+           "to 3.1%, but RAPM alone does about as well as the box score. A player's market value is then his market "
            "price for every season left on his contract minus his salary, the same way our surplus works."))
 s.append(figure(RFIG / "case_two_prices.png", "Figure 3. Every player under contract: the market's value against "
                 "ours, both over the whole contract. Philadelphia's moves in color. Embiid and Brown are where the "
@@ -295,16 +296,17 @@ s.append(P("The search tries up to three trades in a row. Philadelphia sends one
            "owner decides how far past the tax he goes."))
 s.append(table([
     ["Scenario", "Wins", "Playoffs", "Finals", "Title", "Payroll", "Tax", "Picks out"],
-    ["No trades", "45.9", "78%", "10%", "3.5%", "$213.2M", "$21.2M", ""],
+    ["No trades", "45.9", "78%", "10%", "3.5%", "$213.2M", "$15.8M", ""],
     ["Best under the tax line", "54.7", "98%", "34%", "17.1%", "$200.4M", "$0", "2033 1st + 8 2nds"],
-    ["One trade only, 1st apron", "49.2", "88%", "17%", "6.6%", "$208.8M", "$13.1M", "2 2nds"],
-    ["One trade only, 2nd apron", "51.4", "94%", "23%", "10.1%", "$212.5M", "$19.6M", "2033 1st + 6 2nds"],
-    ["Best under the 1st apron", "58.3", "100%", "46%", "26.8%", "$208.7M", "$13.0M", "8 2nds"],
-    ["Best under the 2nd apron", "58.4", "100%", "48%", "28.1%", "$209.5M", "$14.4M", "2033 1st + 8 2nds"],
+    ["One trade only, 1st apron", "49.2", "88%", "17%", "6.6%", "$208.8M", "$8.9M", "2 2nds"],
+    ["One trade only, 2nd apron", "50.6", "93%", "20%", "8.7%", "$211.8M", "$12.7M", "2 2nds"],
+    ["Best under the 1st apron", "58.3", "100%", "46%", "26.8%", "$208.7M", "$8.8M", "8 2nds"],
+    ["Best under the 2nd apron", "58.3", "100%", "47%", "27.8%", "$208.7M", "$8.9M", "6 2nds"],
 ], [4.4 * cm, 1.2 * cm, 1.6 * cm, 1.4 * cm, 1.3 * cm, 1.9 * cm, 1.7 * cm, 3.3 * cm],
-    "Table 4. Scenarios, full simulation with 10,000 seasons, trade bonuses included. The second apron buys 1.3 "
-    "points of title odds for the 2033 first and $1.4M more tax, the first apron plan is the one to make."))
-s.append(figure(RFIG / "case_scenarios.png", "Figure 7. Odds per scenario."))
+    "Table 4. Scenarios, full simulation with 10,000 seasons, trade bonuses included. The second apron finds the "
+    "same three trades with other bench players (with 40,000 seasons: 27.1% and 27.6%), so it buys nothing. "
+    "The tax-line plan ends $6,470 under the line."))
+s.append(figure(RFIG / "case_scenarios.png", "Figure 7. Odds per scenario.", width=TEXT_W * 0.8))
 s.append(P("7.1 The recommended package", h2))
 s.append(table([
     ["Trade", "Philadelphia sends", "Philadelphia gets", "Salary out / in", "Partner's gain (market)",
@@ -322,42 +324,52 @@ s.append(table([
     "gain is value over the contracts, after picks and Brown's trade bonus ($5.5M, paid by Philadelphia)."))
 s.append(P("The logic is the same in all three. Brown and Embiid go at the market's price, which is close to even, "
            "while our model sees each of them costing about $110M more than he's worth over his deal. Simons is the "
-           "opposite case: the market likes a 28-year-old who scored 18 a game, our model has him at replacement level. "
+           "opposite case: the market likes a guard who averaged 18.5 points over the last three seasons (14 last season), "
+           "our model has him at replacement level. "
            "Coming back are players our model rates above their price: Haliburton (4.0 points per 100, coming back from "
-           "his Achilles), Adebayo (3.2), Coward and Mitchell (2.2 and 2.1), Spencer and Nesmith (1.8 and 1.7). Almost "
+           "his Achilles), Adebayo (3.0), Coward and Mitchell (1.9 and 1.7), Spencer and Nesmith (1.3 and 1.2). Almost "
            "4,000 minutes that went to players at or below replacement level (Simons, Edwards, Hukporti and the "
            "camp contracts) now go to real rotation players, and that's where most of the 12 wins come from. The shape "
            "works too: on average one big and two guards on the floor, with Adem Bona and Jabari Walker behind "
            "Adebayo."))
 s.append(P("The cost: all 8 second-round picks (the 2033 first stays), $5.5M in cash for Brown's trade bonus, and "
            "$9M by the market's measure, most of it the picks that pay for the two trade bonuses. In return the "
-           "payroll drops $4.5M and the tax $8M this season. By our model the 76ers gain about "
+           "payroll drops $4.5M and the tax $7M this season. By our model the 76ers gain about "
            "$310M of value over the "
            "contracts, because the two biggest contracts leave. LeBron himself ends up the 10th most valuable player "
            "on the roster, at 42 he's a rotation player now. If he gets his ring, it will be because of the people "
            "around him."))
+s.append(P("The bench pieces are interchangeable. A version that sends Edwards to Memphis and Adem Bona and Dillon "
+           "Jones to Indiana, and keeps Barlow and Fall, gets the same result for six seconds instead of eight "
+           "(the second-apron row of Table 4, it passes the first apron for one step and ends under it)."))
 s.append(P("7.2 The two targets, and one trade at a time", h2))
-s.append(P("52 wins is reached on the way. Even the cheapest route lands at 56.5 wins (Brown to Indiana, Simons to "
-           "Memphis, Embiid with Caldwell-Pope to New Orleans for Zion Williamson and Herbert Jones, four second-round "
-           "picks), and under the tax line the 76ers can get to 55 wins without paying any tax."))
+s.append(P("52 wins is reached on the way. Even the cheapest route lands at 56.5 wins (Simons to Memphis, Embiid "
+           "with Caldwell-Pope to Indiana for Haliburton and Nesmith, Brown to New Orleans for Zion Williamson and "
+           "Herbert Jones, four second-round picks), and under the tax line the 76ers can get to 55 wins without "
+           "paying any tax."))
 s.append(P("Not one trade at a time. The best single deal under the first apron is the Memphis one: 49 wins and 6.6% "
-           "title odds. Allow the second apron and it's Embiid to Miami for Adebayo and Mitchell: 51 wins and 10%. The "
-           "three together get to 27%, over three times what the best one does alone, because title odds climb faster as a "
-           "team gets better (Figure 1). For an owner that means approving the package, not a first step."))
-s.append(P("60 wins comes up just short. The best roster any trade path finds is 58.4 wins with a 48% chance of the "
+           "title odds. Allow the second apron and it's Simons, Hukporti and Fall to Milwaukee for Ryan Rollins and "
+           "Kevin Porter Jr.: 51 wins and 8.7%. Embiid to Miami doesn't work on its own, the salaries only fit once "
+           "Philadelphia is under the first apron. The three together get to 27%, four times the best single trade "
+           "under the same apron, because title odds climb faster as a team gets better (Figure 1). For an owner that means approving the package, not a first step."))
+s.append(P("60 wins comes up just short. The best roster any trade path finds is 58.3 wins with a 47% chance of the "
            "Finals, against the 50% the target asked for. The limit isn't picks. Stars cost $50M+ in salary, "
            "Philadelphia's big salaries are the two contracts the market won't pay a premium for, and the teams with "
            "stars to spare are contenders that won't get weaker."))
 
 s.append(P("7.3 The fine print", h2))
-s.append(P("Three contract details can kill a trade that works on paper. Trade bonuses: Brown has one of 7% (at most "
+s.append(P("Five contract details can kill a trade that works on paper. Trade bonuses: Brown has one of 7% (at most "
            "$7M) and Haliburton one of 15%, paid in cash by the team that trades them and added to the salary of the "
            "team that gets them. Both are paid close to the maximum, and a bonus can't lift a salary past it, so this "
            "season only $0.7M and $0.6M land on the cap ($5.5M and $6.9M in total). Small, but in the first version "
            "of the plan Brown's alone pushed Indiana $76,000 over the first apron, where it can't take back more "
-           "salary than it sends, and the trade broke. The search now counts every bonus. No-trade clauses: none of "
-           "the nine players in the plan can veto a trade. Base-year compensation now only exists for sign-and-trades, "
-           "so it doesn't apply here."))
+           "salary than it sends, and the trade broke. The search now counts every bonus. Non-guaranteed contracts: "
+           "only guaranteed money counts as outgoing salary, so the camp deals of Fall and Nelson add nothing to "
+           "Philadelphia's side while the partner takes on all of it. The plan passes with that, a single Embiid "
+           "trade above the first apron doesn't. No-trade clauses: none of the 15 players in the plan can veto a "
+           "trade. Base-year compensation now only exists for sign-and-trades, so it doesn't apply here. And "
+           "taking back more salary than it sends hard-caps Philadelphia at the first apron for "
+           "the season, with $0.3M of room."))
 
 # 8
 s.append(P("8. What could go wrong", h1))
@@ -365,8 +377,8 @@ s += bullets([
     "The whole plan is a bet against the market. The market has Philadelphia 5 wins higher than we do today, mostly "
     "because it likes Brown and Embiid more. Section 4 says our model has been the better bet historically, but "
     "for any two players it can be wrong.",
-    "Haliburton missed all of 2025-26 with a torn Achilles. We expect 9 more games missed and a slower first 20 back, "
-    "and he is the most valuable player coming in. The first thing to check before any deal.",
+    "Haliburton missed all of 2025-26 with a torn Achilles. We expect 9 more games missed from the injury itself (28 "
+    "with his normal injury risk) and a slower first 20 back, and he is the most valuable player coming in. The first thing to check before any deal.",
     "\"The partner accepts\" means fair at market prices, and the market model misses by about $5M a year. It is not a "
     "negotiation, and Indiana trading Haliburton or Miami taking Embiid's contract is not a given.",
     "Positions come in as box-score roles and the lineup-shape effect of section 6.1. That catches a roster "
@@ -379,7 +391,6 @@ s += bullets([
 ])
 
 # appendix
-s.append(PageBreak())
 s.append(P("Appendix A. Method notes", h1))
 s.append(table([
     ["Piece", "How", "Check"],
@@ -407,24 +418,22 @@ s.append(table([
     ["Roster spots", "after every trade at most 15 guaranteed contracts (over = waive the cheapest, money stays, "
      "the partner's loss counted), at least 14 standard for PHI (minimum signings)", "all plans in Table 4 pass"],
     ["Trade search", "2-team trades, up to 3 in a row, 1-3 players out + picks, 0-2 in; CBA matching by apron for "
-     "both teams; partner even or better at market prices; contenders don't get weaker; beam width 8",
+     "both teams, non-guaranteed salary only counts as outgoing for what's guaranteed; partner even or better at "
+     "market prices; contenders don't get weaker; beam width 8",
      "full simulation for the finalists"],
     ["Who is right", "team wins ~ payroll / market price / our WAR of the roster before the season, each scaled "
      "by minutes played vs expected", "leave one season out, 390 team-seasons"],
 ], [3.0 * cm, 9.2 * cm, 4.6 * cm]))
 s.append(P("Appendix B. Reproducing it", h1))
-s.append(P("After the main pipeline (see the README), in order. The nba.com and basketball-reference pulls run from "
-           "a normal machine:"))
-for line in ["draft, rookies, value, war, surplus, season_sim", "rosters, scrape_salaries --contracts-only, current_injuries",
-             "market_value, scrape_transactions, trade_value", "playoff_stints, playoff_rotation, positions, season_sim, arbitrage",
-             "trade_search (about 30 minutes)", "report/make_case_figures.py, report/build_case.py"]:
+s.append(P("After the whole main pipeline (appendix B of the main report, through season_sim and arbitrage):"))
+for line in ["trade_search (about 30 minutes)", "report/make_case_figures.py, report/build_case.py"]:
     s.append(P(line, mono))
 s.append(Spacer(1, 6))
 s.append(P("Data as in the main report, plus nba.com rosters (nba_api), basketball-reference transactions and "
            "contracts, BetMGM win totals (Yahoo Sports, July 28) and Kalshi title prices (September 24) for the "
            "comparison, cap numbers from the NBA's 2026-27 announcement, the 76ers' pick inventory from PhillyVoice, "
-           "the draft pick research summary by Tony ElHabr, trade bonuses from ShamSports and veto rights from Hoops "
-           "Rumors (September 2026).", caption))
+           "the draft pick research summary by Tony ElHabr, trade bonuses from ShamSports, veto rights, tax rates and "
+           "the non-guaranteed rule from Hoops Rumors.", caption))
 
 # headings stick to whatever comes right after them (keepWithNext alone didn't do it with KeepTogether blocks)
 def flat(*fs):

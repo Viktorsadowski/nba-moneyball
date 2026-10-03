@@ -159,7 +159,7 @@ s.append(P("A team has a budget, the salary cap, and wants wins. So the useful q
            "for decades with WAR. In basketball the pieces exist, plus-minus models on one side and public contract "
            "data on the other, but they are rarely put together into one price. This project does that, end to end, "
            "with data anyone can download."))
-s.append(P("The framework answers four questions:"))
+s.append(P("The framework answers five questions:"))
 s += bullets(["How many wins will a player add next season, and over the rest of his contract?",
               "How much of that is at risk because of age and injuries?",
               "What does a win cost on the market?",
@@ -221,9 +221,9 @@ s.append(P("Rookies have no RAPM, and young players improve faster than the agin
            "at what his draft slot has been worth (value and minutes as a function of log pick, from every pick "
            "since 2010), and players in seasons 2 to 4 get a bump by pick group, learned from how far earlier "
            "projections fell short for the same group: about +1 point per 100 in year 2 for top-5 picks, 0.1 to 0.5 "
-           "elsewhere. Both are tested out of sample (one draft left out, the bump from earlier seasons only). In "
-           "the backtest they bring the error from 1.546 to "
-           "1.527 for all players and from 1.642 to 1.585 for players in their first four seasons."))
+           "elsewhere. Both are tested out of sample (one draft left out, the bump from earlier seasons only). "
+           "On the seasons from 2016-17 on, the first ones are needed to learn the bump, they bring the error "
+           "from 1.546 to 1.527 for all players and from 1.642 to 1.585 for players in their first four seasons."))
 s.append(P("3.3 From points to wins", h2))
 s.append(P("The blended value is shrunk, so it is put back on a real scale by calibrating against the next season's "
            "team point differentials: calibrated value = 1.19 × value − 0.78. Replacement level is what teams actually "
@@ -263,7 +263,7 @@ s.append(P("Surplus says what a player adds. A trade also needs what other teams
            "the cap on what the player had done before signing: points, rebounds, assists, minutes and games, last "
            "season and the three before, plus shooting, age and our RAPM value. Minimum and max deals only say "
            "\"at most\" and \"at least\", so the fit is a Tobit. With the season left out it misses by 3.1% of the "
-           "cap (about $5M a year, r 0.71). A player's market value is that price for every season left on his "
+           "cap on deals between the minimum and the max (about $5M a year, r 0.71). A player's market value is that price for every season left on his "
            "contract minus his salary."))
 s.append(P("Draft picks are priced two ways. What a pick turns into: the market value of what drafted players did "
            "over their four rookie-scale seasons minus their salaries, by slot. And what trades pay for one: with "
@@ -295,7 +295,8 @@ s.append(table([
     ["Kawhi Leonard", "36", "5.3", "17.2", "6.8", "9.0", "2.2"],
 ], [4.6 * cm, 1.1 * cm, 2.2 * cm, 2.8 * cm, 1.4 * cm, 2.3 * cm, 2.4 * cm],
     "Table 2. Highest projected WAR for 2026-27. Value is the calibrated, age-adjusted value in points per 100 "
-    "possessions above average, including the young-player bump."))
+    "possessions above average, including the young-player bump. Age is the age at the end of the season, the "
+    "way stats.nba.com counts it, so players with a spring birthday are a year older here than in most lists."))
 s.append(P("The model and the MVP voters mostly agree on who the best players are. The median MVP winner since 2010-11 "
            "ranks second in that season's RAPM, 75% of winners were in the RAPM top five and half were first. They "
            "disagree on why: vote share correlates with offensive RAPM (Spearman 0.48) and barely with defensive RAPM "
@@ -339,7 +340,7 @@ s.append(P("Getting back on the floor depends on how long the absence was: 92% o
            "the aging correction for older players who sat out a full year."))
 s.append(P("In the projections the injury risk costs about 22% of the league's healthy WAR. For the 65 players worth 4+ "
            "WAR when healthy it is 1.3 WAR a season on average, 21% of their value. The largest shares belong to "
-           "players coming off long absences: Jimmy Butler (71%), Kyrie Irving (44%), Damian "
+           "players out with a long injury or just back from one: Jimmy Butler (71%), Kyrie Irving (44%), Damian "
            "Lillard (43%), Fred VanVleet (41%) and Tyrese Haliburton (36%). 54 players were still listed out at the end of the season and 42 more had "
            "played fewer than 20 games since coming back."))
 
@@ -427,7 +428,8 @@ s.append(P("Payroll misses by 8.0 wins, the market model by 7.2 and our model by
            "+1.5) and payroll +1.7 (probably what teams know about health that the stats don't). Once our value is "
            "known, the market's price says nothing more about wins. It is still the right guide to what another team "
            "will accept: trades balance far better in the market's money than in ours (average miss 5.5% of the cap "
-           "vs 9.7%)."))
+           "vs 9.7%). One caveat: our aging curve and box-score prior are fitted on all seasons, later ones "
+           "included, while the market model is fitted with the season left out."))
 s.append(P("The same trades price draft picks. A future first buys about $5.3M of market value (95% interval −$0.4M "
            "to $11.3M) and a second $1.4M ($0.2M to $2.9M), while the average first turned into $17.9M of value over "
            "its rookie deal and the average second $3.3M. The slot curve has the shape of the published research: "
@@ -508,8 +510,8 @@ s += bullets([
     "The win scale depends on the calibration and the replacement level. A replacement team wins about 29 games "
     "here, and every WAR and dollar number moves with that choice.",
     "Contracts: options are valued on expected value, one year at a time, and ignore extensions signed instead of "
-    "an opt-out. The trade search models the 2026-27 trade rules (salary matching by apron, trade bonuses, roster "
-    "spots), but not cap holds, exceptions for free agents or planning over several seasons. The price of a win is "
+    "an opt-out. The trade search models the 2026-27 trade rules (salary matching by apron, trade bonuses, "
+    "non-guaranteed salaries, roster spots), but not cap holds, exceptions for free agents or planning over several seasons. The price of a win is "
     "the market average, while a contender may rationally pay more at the margin.",
     "The market model only sees new veteran contracts and the box score. It doesn't know about health records, "
     "agents or timing, and pick prices from trades are noisy (the first-round interval includes 0).",
