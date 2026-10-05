@@ -175,10 +175,13 @@ def plot(ret: pd.DataFrame, q1: pd.DataFrame) -> None:
     axes[0].invert_yaxis()  # shared y, so once is enough
     axes[0].set_xlabel("percentage points", color=muted, fontsize=8.5)
     axes[1].set_xlabel("points per 100 possessions", color=muted, fontsize=8.5)
-    axes[1].legend(frameon=False, fontsize=8, loc="upper right", labelcolor=ink)  # top row is empty there
     fig.suptitle("Which injuries hurt a player's future? (10+ games lost, vs seasons without injury)",
                  x=0.01, ha="left", fontsize=12, color=ink)
     fig.tight_layout(rect=(0, 0, 0.93, 1))
+    # legend up next to the title, inside the axes it sat on the top row
+    h, lab = axes[1].get_legend_handles_labels()
+    fig.legend(h, lab, frameon=False, fontsize=8, labelcolor=ink, ncol=2, loc="upper right",
+               bbox_to_anchor=(0.93, 0.995))
     out = ROOT / "figures"
     out.mkdir(exist_ok=True)
     fig.savefig(out / "injury_types.png", facecolor=surface)

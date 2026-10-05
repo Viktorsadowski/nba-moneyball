@@ -22,6 +22,7 @@ from matplotlib.patches import FancyArrowPatch, FancyBboxPatch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from config import PROCESSED_DIR, ROOT  # noqa: E402
+from labels import place_labels  # noqa: E402
 
 OUT = Path(__file__).resolve().parent / "figures"
 SURFACE, INK, MUTED, GRID, BLUE, ORANGE = "#fcfcfb", "#0b0b0b", "#52514e", "#e6e5e0", "#2a78d6", "#eb6834"
@@ -98,21 +99,13 @@ def market() -> None:
     xx = np.linspace(0, x.max() + 0.5, 50)
     ax.plot(xx, xx * dpw / 1e6, color=INK, lw=1)
     y_top = y.max() + 5
-    ax.text(0.9 * y_top / (dpw / 1e6) + 0.25, 0.9 * y_top, f"market price: ${dpw / 1e6:.1f}M per win.\nbelow the line = underpaid",
-            ha="left", va="center", fontsize=7.5, color=INK)
+    note = ax.text(0.9 * y_top / (dpw / 1e6) + 0.25, 0.9 * y_top,
+                   f"market price: ${dpw / 1e6:.1f}M per win.\nbelow the line = underpaid",
+                   ha="left", va="center", fontsize=7.5, color=INK)
     under = s.nlargest(9, "surplus_next")
     over = s.nsmallest(9, "surplus_next")
     ax.scatter(under["war_next"], under["salary_next"] / 1e6, s=26, color=BLUE, zorder=3, label="most underpaid")
     ax.scatter(over["war_next"], over["salary_next"] / 1e6, s=26, color=ORANGE, zorder=3, label="most overpaid")
-    placed = []
-    for r in pd.concat([under, over]).sort_values("salary_next", ascending=False).itertuples():
-        px, py = r.war_next, r.salary_next / 1e6
-        for dx, dy in ((0.15, 0.6), (0.15, -1.9), (-1.9, 0.6), (-1.9, -1.9), (0.15, 2.4), (0.15, -3.6)):
-            tx, ty = px + dx, py + dy
-            if all(abs(tx - a) > 2.4 or abs(ty - b) > 1.7 for a, b in placed):
-                break
-        placed.append((tx, ty))
-        ax.text(tx, ty, r.name, fontsize=6.8, color=INK)
     ax.set_xlabel("projected WAR 2026-27 (injury-adjusted)", color=MUTED, fontsize=8.5)
     ax.set_ylabel("salary 2026-27, $M", color=MUTED, fontsize=8.5)
     ax.set_xlim(-0.3, x.max() + 1.6)
@@ -123,7 +116,13 @@ def market() -> None:
     for sp in ("left", "bottom"):
         ax.spines[sp].set_color(GRID)
     ax.tick_params(colors=MUTED, labelsize=8)
-    ax.legend(frameon=False, fontsize=8, loc="lower right", labelcolor=INK)
+    leg = ax.legend(frameon=False, fontsize=8, loc="lower right", labelcolor=INK)
+    # names last, when the limits are final. they stay off each other, the other marked points, the price line,
+    # the note and the legend
+    named = pd.concat([under, over])
+    lx = np.linspace(0, y_top / (dpw / 1e6), 300)
+    place_labels(ax, named["war_next"], named["salary_next"] / 1e6, named["name"],
+                 avoid_line=np.column_stack([lx, lx * dpw / 1e6]), avoid_artists=[note, leg], marker_pt=2.8)
     fig.savefig(OUT / "market.png", facecolor=SURFACE, bbox_inches="tight", pad_inches=0.08)
     plt.close(fig)
 

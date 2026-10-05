@@ -118,17 +118,7 @@ def plot(tab: pd.DataFrame, playoff_teams: pd.DataFrame) -> None:
     a2.scatter(p["o"], p["d"], s=16, color=muted, alpha=0.35, lw=0, label="playoff teams")
     c = p[p["champion"]]
     a2.scatter(c["o"], c["d"], s=46, color=orange, zorder=3, label="champions")
-    # labels: first spot (right/left, above/below) that doesn't hit an earlier label. boxes in data units,
-    # rough size of "GSW 18" at this scale
-    wbox, hbox, placed = 0.8, 0.3, []
-    for r in c.sort_values("o", ascending=False).itertuples():
-        for dx, dy in ((0.15, 0.08), (0.15, -0.38), (-0.95, 0.08), (-0.95, -0.38), (0.15, 0.4), (-0.95, 0.4)):
-            x0, y0 = r.o + dx, r.d + dy
-            if all(abs(x0 - px) > wbox or abs(y0 - py) > hbox for px, py in placed):
-                break
-        placed.append((x0, y0))
-        a2.text(x0, y0, f"{r.abbr} {r.season % 100 + 1:02d}", fontsize=7, color=ink)
-    x_lo, x_hi = p["o"].min() - 0.8, p["o"].max() + 1.2
+    x_lo, x_hi = p["o"].min() - 0.8, p["o"].max() + 1.7       # room on the right for a label
     y_lo, y_hi = p["d"].min() - 0.8, p["d"].max() + 0.8
     for k in range(-15, 19, 3):
         a2.plot([-20, 20], [k + 20, k - 20], color=grid, lw=0.6, zorder=0)  # same-net lines
@@ -140,9 +130,13 @@ def plot(tab: pd.DataFrame, playoff_teams: pd.DataFrame) -> None:
     a2.set_ylabel("defense vs league, per 100", color=muted, fontsize=8.5)
     a2.set_title("Regular season O and D of every playoff team (diagonals = same net)", loc="left", fontsize=10,
                  color=ink)
-    a2.legend(frameon=False, fontsize=8, labelcolor=ink, loc="lower right")
+    leg = a2.legend(frameon=False, fontsize=8, labelcolor=ink, loc="lower right")
     fig.suptitle("Does defense win championships?", x=0.01, ha="left", fontsize=12, color=ink)
     fig.tight_layout()
+    # champion labels last, when the layout is final (labels.py keeps them off each other and off the dots)
+    from labels import place_labels
+    place_labels(a2, c["o"], c["d"], [f"{r.abbr} {r.season % 100 + 1:02d}" for r in c.itertuples()],
+                 avoid_artists=[leg], fontsize=7, color=ink, marker_pt=3.6)
     out = ROOT / "figures"
     out.mkdir(exist_ok=True)
     fig.savefig(out / "defense.png", facecolor=surface)

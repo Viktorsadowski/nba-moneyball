@@ -235,7 +235,7 @@ def plot(model: pd.DataFrame, r: pd.DataFrame) -> None:
     a1.set_xlabel("draft pick", color=muted, fontsize=8.5)
     a1.set_ylabel("rookie-season RAPM, per 100", color=muted, fontsize=8.5)
     a1.set_title("Rookie season by draft slot", loc="left", fontsize=10, color=ink)
-    a1.legend(frameon=False, fontsize=8, labelcolor=ink)
+    a1.legend(frameon=False, fontsize=8, labelcolor=ink, loc="lower right")  # the corner with the fewest dots
     a2.bar(model["pick"], model["surplus_war_4y_raw"], color=grid, width=0.8, label="average, by pick")
     a2.plot(model["pick"], model["surplus_war_4y"], color=orange, lw=2.2, label="smoothed")
     a2.axhline(0, color=muted, lw=0.8)

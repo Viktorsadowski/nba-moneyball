@@ -23,6 +23,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from config import PROCESSED_DIR  # noqa: E402
+from labels import place_labels  # noqa: E402
 
 OUT = Path(__file__).resolve().parent / "figures"
 SURFACE, INK, MUTED, GRID, BLUE, ORANGE, GREY = "#fcfcfb", "#0b0b0b", "#52514e", "#e6e5e0", "#2a78d6", "#eb6834", "#b9b7b0"
@@ -50,11 +51,12 @@ def curve(now_w: float, plan_w: float) -> None:
         ax.axvline(x, color=GRID if lab.startswith("target") else INK, lw=0.9, ls="--" if lab.startswith("target") else "-")
         # the plan sits close to target 2: whichever of the two is further left gets its label left of the line
         left = "the plan" if plan_w < 60 else "target 2"
-        ax.text(x - 2.1 if lab == left else x + 0.2, 101, lab, fontsize=7.5,
+        ax.text(x - 0.2 if lab == left else x + 0.2, 103, lab, fontsize=7.5, ha="right" if lab == left else "left",
                 color=MUTED if lab.startswith("target") else INK)
     ax.set_xlabel("projected wins", color=MUTED, fontsize=8.5)
     ax.set_ylabel("chance, %", color=MUTED, fontsize=8.5)
-    ax.set_ylim(0, 108)
+    ax.set_ylim(0, 110)
+    ax.set_yticks(range(0, 101, 20))
     ax.grid(axis="y", color=GRID, lw=0.6)
     # top left is the only corner no curve runs through
     ax.legend(frameon=False, fontsize=8, loc="upper left", labelcolor=INK)
@@ -77,19 +79,23 @@ def two_prices(out_names: list, in_names: list) -> None:
     for names, col, lab in ((out_names, ORANGE, "PHI sends"), (in_names, BLUE, "PHI gets")):
         s = m[m["name"].isin(names)]
         ax.scatter(s["market_surplus"] / 1e6, s["surplus"] / 1e6, s=30, color=col, zorder=3, label=lab)
-        # only the ones that matter get a name, the salary filler stays a dot
-        for r in s[s["salary"] >= 7.5e6].itertuples():
-            dx, dy = {"Joel Embiid": (3, 8), "Jaylen Brown": (3, -12), "Davion Mitchell": (-50, 16),
-                      "Aaron Nesmith": (3, 6)}.get(r.name, (3, 3))
-            ax.text(r.market_surplus / 1e6 + dx, r.surplus / 1e6 + dy, r.name, fontsize=6.8, color=INK)
-    ax.text(150, -110, "above the line: we like him more\nthan the market does", fontsize=7.5, color=MUTED)
+    note = ax.text(150, -110, "above the line: we like him more\nthan the market does", fontsize=7.5, color=MUTED)
     ax.set_xlabel("market value over his contract, $M (what other teams think he's worth minus his salary)",
                   color=MUTED, fontsize=8)
     ax.set_ylabel("our value over his contract, $M", color=MUTED, fontsize=8.5)
     ax.set_xlim(-120, 220)
     ax.set_ylim(-130, 330)
-    ax.legend(frameon=False, fontsize=8, loc="upper left", labelcolor=INK)
+    leg = ax.legend(frameon=False, fontsize=8, loc="upper left", labelcolor=INK)
     fig.tight_layout()
+    # names last, when the layout is final. only the ones that matter get a name, the salary filler stays a dot,
+    # but the names stay off those dots too, and off the even-value line
+    moved = m[m["name"].isin(list(out_names) + list(in_names))]
+    named = moved[moved["salary"] >= 7.5e6]
+    rest = moved[moved["salary"] < 7.5e6]
+    ll = np.linspace(lim[0], lim[1], 400)
+    place_labels(ax, named["market_surplus"] / 1e6, named["surplus"] / 1e6, named["name"],
+                 avoid_xy=np.column_stack([rest["market_surplus"] / 1e6, rest["surplus"] / 1e6]),
+                 avoid_line=np.column_stack([ll, ll]), avoid_artists=[note, leg], marker_pt=3.0)
     fig.savefig(OUT / "case_two_prices.png", facecolor=SURFACE)
     plt.close(fig)
 
@@ -131,7 +137,8 @@ def scenarios(sc: pd.DataFrame, now: dict) -> None:
             if k != "playoffs":
                 ax.text(xi + (j - 1) * 0.26, vi + 1.2, f"{vi:.0f}", ha="center", fontsize=7, color=INK)
     ax.set_xticks(x)
-    ax.set_xticklabels([n for n, _ in rows], fontsize=7.8, color=INK)
+    # two lines, so the long names can't run into each other when the figure is printed small
+    ax.set_xticklabels([n.replace(", ", ",\n") for n, _ in rows], fontsize=7.8, color=INK)
     ax.set_ylabel("chance, %", color=MUTED, fontsize=8.5)
     ax.grid(axis="y", color=GRID, lw=0.6)
     ax.set_ylim(0, 122)                 # room for the legend above the 100% bars

@@ -268,7 +268,8 @@ def plot(df: pd.DataFrame, pred: np.ndarray) -> None:
     ax.set_xlabel("predicted, % of cap (season left out)", color=muted, fontsize=8.5)
     ax.set_ylabel("signed for, % of cap", color=muted, fontsize=8.5)
     ax.set_title("What the market pays: new veteran contracts", loc="left", fontsize=10, color=ink)
-    ax.text(1, 37, "orange = max deals, grey = minimum deals", fontsize=7.5, color=muted)
+    # bottom right is the empty corner (nobody predicted at 25%+ signs for under 10%)
+    ax.text(39, 2.5, "orange = max deals, grey = minimum deals", fontsize=7.5, color=muted, ha="right")
     for s in ("top", "right"):
         ax.spines[s].set_visible(False)
     for s in ("left", "bottom"):
